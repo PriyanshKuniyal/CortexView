@@ -3,3 +3,9 @@ data/archive/remind/
 
 # Python bytecode
 __pycache__/
+
+# Python virtual environments
+.venv/
+
+# Local segmentation outputs (may contain patient-derived pixels)
+data/out/
