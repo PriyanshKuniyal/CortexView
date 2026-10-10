@@ -1,32 +1,23 @@
-# React + TypeScript + Vite
+# Plie AI - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React + TypeScript + Vite + Tailwind CSS v4 chat UI for the AI system.
 
-Currently, two official plugins are available:
+## Run
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+    npm install
+    cp .env.example .env.local   # VITE_USE_MOCK=true works without a backend
+    npm run dev                  # http://localhost:5173
 
-## React Compiler
+## Backend contract
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The dev server proxies `/api/*` to `VITE_API_TARGET` (default `http://localhost:8000`).
+The UI calls `POST /api/chat` with `{ "messages": [{ "role": "user" | "assistant", "content": "..." }] }`
+and expects the reply streamed back as plain text. See `src/lib/api.ts`.
 
-## Expanding the Oxlint configuration
+## Structure
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+    src/
+      components/   Sidebar, ChatMessage, ChatInput, EmptyState
+      hooks/        useChat - conversation state, streaming, stop
+      lib/          api client (real + mock), utils
+      types/        shared types
