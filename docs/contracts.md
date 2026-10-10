@@ -232,9 +232,5 @@ The signature is unchanged from finetune-brief §10. The changes:
 ---
 
 ## Open decisions
-1. **[DECIDE]** Upload size cap. In ReMIND-001 an MR series is 22–39 MB. A whole Preop folder is 26–305 MB across patients 001–028.
-2. **[DECIDE]** Can the user change the slice after analysis?
-   - (a) Re-POST everything with `slice_index`: simple and stateless, but re-uploads the files.
-   - (b) The backend keeps the volume for N minutes: fast, but holds patient pixels in memory.
-3. **[DECIDE]** Is there a doctor view vs. patient view toggle? It changes which `text` templates are used.
-4. Does the chat UI send any free text with the upload? This draft assumes no: files only.
+1. SIZE_CAP = 300 mb
+4.  This draft assumes no text files only. this wud be intorduced in next parts
