@@ -3,3 +3,15 @@ data/archive/remind/
 
 # Python bytecode
 __pycache__/
+
+# Python virtual environments
+.venv/
+.venv-ai/
+
+# Local segmentation outputs (may contain patient-derived pixels)
+data/out/
+
+# AI segmentation: nnU-Net data folders (patient-derived volumes) and trained weights
+ml/nnunet/
+ml/weights/
+ml/*_private.json

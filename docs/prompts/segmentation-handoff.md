@@ -194,8 +194,8 @@ slices/<anon_id>/
 | Layer | Compare against |
 |---|---|
 | Tumor | ReMIND manual SEG |
-| Skull | head − ReMIND cerebrum |
-| CSF | ReMIND ventricles (ventricles are only *part of* CSF, so report recall/overlap carefully) |
+| Skull | head − ReMIND cerebrum (− SynthSeg outer CSF once available) |
+| CSF | ReMIND ventricles ∪ SynthSeg outer CSF (label 24). Also report the ventricles and outer CSF separately. *(Updated 2026-10-10: outer CSF added, see `docs/contracts.md` C6.)* |
 | GM/WM | **SynthSeg** "silver standard", never called ground truth. Offline only, run by a teammate per `docs/prompts/synthseg-gm-wm.md`; tumor region masked out. |
 | All layers | Synthetic phantom with known answers (P1: a generator of concentric regions + a lesion) |
 | Lesion (bonus) | Kaggle px-based Dice |

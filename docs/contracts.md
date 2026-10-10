@@ -8,6 +8,12 @@ Once frozen, changing one needs everyone's OK (TASKS §2).
 - **Layers and colors:** `shared/layers.json`, read by both Python and TS.
 - Items marked **[DECIDE]** are still open.
 
+<!-- NOTE FOR TEAMMATES AND AI AGENTS: a second segmentation backend (AI, 3D) is being built on branch
+     `segmentation-AI-version`. It plugs in behind the same interface as the classical one. Read C6 before
+     changing segment(), the layer list, C3 timing or C4. GM/WM + outer-CSF training labels (SynthSeg) are pending from a teammate. -->
+> **⚠ Two segmentation backends.** The classical one (`backend/cortexview/segment.py`) and an AI one (branch `segmentation-AI-version`, see **C6**) must stay interchangeable via one setting.
+> If you change `segment()`, the layer list (C1), the timing in C3, or C4, check C6 too.
+
 ---
 
 ## C1. Layer registry (`shared/layers.json`)
@@ -76,7 +82,7 @@ slices/<slice_id>/
 ### Flow: two calls, with polling
 ```
 frontend                                   backend
-   │ POST /api/analyze (files)                │  load → pick series/slice → segment → metrics   (< 1 s target)
+   │ POST /api/analyze (files)                │  load → pick series/slice → segment → metrics   (< 1 s target; AI segmenter ~10–25 s, see C6)
    │ ◄──────── 200 AnalyzeResponse ───────────│  starts the render in the background
    │                                          │
    │ GET /api/render/{job_id}   every 1 s     │
@@ -185,6 +191,7 @@ Messages and logs never contain patient info, filenames or header values.
 ## C4. Metrics (`MetricsReport`, produced by MP)
 
 All numbers are computed from the masks and pixel spacing. **No AI.** The same input always gives the same output.
+(The masks themselves may come from the AI segmenter, C6. The metrics are still pure math on whatever masks they get.)
 
 ```json
 {
@@ -231,6 +238,66 @@ The signature is unchanged from finetune-brief §10. The changes:
 
 ---
 
+## C6. Segmentation backends: classical vs AI (owned by PK; AI work on branch `segmentation-AI-version`)
+
+<!-- NOTE FOR TEAMMATES AND AI AGENTS: this section is the agreement between the classical segmenter
+     (backend/cortexview/segment.py) and the AI segmenter (backend/cortexview/segment_ai/, training in ml/).
+     Don't edit one segmenter's code from the other's work. Ask PK before changing anything here. -->
+
+**Setting:** `CORTEXVIEW_SEGMENTER = classical | ai` (default `classical`).
+If `ai` fails, or there's no NVIDIA GPU, the backend falls back to `classical` with warning `segmenter_fallback`.
+
+**Interface: decided, volume in, label volume out (same as classical).**
+DICOM stores one slice per `.dcm` file. Before `segment()` is called, the shared loader turns the pile of files into one 3D array:
+```
+upload: e.g. 192 .dcm files (one per slice)
+  └─ dicom_io.load_series(...)   read with pydicom → sort by ImagePositionPatient → np.stack
+                                 → apply slope/intercept → spacing + orientation from headers
+                                 → reorient to axial (permute/flip only, never resampled)
+volume = Volume(data [k, j, i], affine, sequence, ...)       e.g. (192, 256, 216) for a T1-post
+segment(volume, meta) → label volume, same shape, values = C1 labels (0, 1, 2, 3, 4, 10)
+```
+- **Both segmenters use the same loader** (`backend/cortexview/dicom_io.py` + `volume.py`, owned by the classical side).
+  The AI branch uses an unchanged copy (see `backend/cortexview/segment_ai/CLASSICAL_SNAPSHOT.md`).
+- Per-layer masks, the displayed slice and the C3 PNGs are all cut from the label volume afterwards.
+  So the label volume also gives lesion volume in mL (C4) and the auto "largest lesion" slice.
+- If the classical `segment()` signature changes, the AI one follows it.
+
+**Where each AI layer's training labels come from:**
+| Layer | Training labels | Who draws them | Status |
+|---|---|---|---|
+| `lesion` | ReMIND tumor SEG | **manual, doctors** | available |
+| `csf`, ventricles part | ReMIND ventricles SEG | automatic (BrainLab), shipped with ReMIND | available |
+| `csf`, outer part (sulci + around the brain) | **SynthSeg** label 24 (silver standard, tumor area masked out) | teammate runs SynthSeg offline | **pending** |
+| `skull` | head − ReMIND cerebrum − SynthSeg outer CSF | cerebrum: automatic (BrainLab); outer CSF: SynthSeg | available (head − cerebrum); refined when SynthSeg lands |
+| `gray_matter`, `white_matter` | **SynthSeg** (silver standard, tumor area masked out) | teammate runs SynthSeg offline | **pending** |
+
+All SynthSeg outputs are produced per `docs/prompts/synthseg-gm-wm.md` (mapping v2).
+
+- SynthSeg is used **only for gray matter, white matter and outer CSF**. Lesion and ventricles come only from ReMIND.
+  Wherever both have a label, ReMIND wins (tumor > ventricles > SynthSeg).
+- **Until SynthSeg lands, the AI `csf` layer is the ventricles only.** The UI should call it "Ventricles" until then.
+  Meanwhile the outer CSF falls into the skull layer (around the brain) or the brain tissue (in the folds).
+- **Modular SynthSeg stage:** until the SynthSeg labels arrive, the AI model predicts one combined "brain tissue" region.
+  Gray/white matter inside it is split by a separate, swappable stage (initially the classical intensity split).
+  When the SynthSeg labels land, the model is retrained with GM, WM and outer CSF. Nothing else in this contract changes.
+- **Never train on Kaggle LGG** (CC BY-NC-SA would carry over to the weights). It may be used for evaluation only.
+- Weights stay out of the public repo (`ml/weights/`, gitignored).
+
+**Evaluation.** Both segmenters are scored by the same `scripts/seg/eval_dice.py`, on the same held-out ReMIND patients (anonymous IDs only).
+Patients are never split across train and test.
+
+**Determinism.** Inference runs in PyTorch deterministic mode, in full 32-bit precision, with pinned versions.
+On the same machine and versions, the same input gives the same masks (checked by a repeat-run test).
+Across different GPUs or drivers, a few edge pixels may differ.
+
+**Timing: decided.** The C3 1 s target is relaxed for AI mode (PK, 2026-10-10).
+The AI segmenter works on the whole 3D series on the GPU, which takes roughly 10–25 s.
+`POST /api/analyze` may take that long when `CORTEXVIEW_SEGMENTER=ai`.
+
+---
+
 ## Open decisions
 1. SIZE_CAP = 300 mb
 4.  This draft assumes no text files only. this wud be intorduced in next parts
+5. ~~AI segmenter timing and how `segment()` gets the volume (C6).~~ Decided 2026-10-10: 1 s relaxed for AI mode; volume in, label volume out (see C6).
