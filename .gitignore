@@ -1,0 +1,5 @@
+# Large external datasets (keep out of git)
+data/archive/remind/
+
+# Python bytecode
+__pycache__/
