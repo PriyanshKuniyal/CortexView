@@ -86,6 +86,10 @@ else:
     pipe.to("cuda")
 if args.lora:
     pipe.load_lora_weights(args.lora)   # needs `pip install peft`
+    # ai-toolkit saves float16 LoRAs; left as is they turn the latents float16/32 and the bf16 VAE decode fails.
+    for name, p in pipe.transformer.named_parameters():
+        if "lora_" in name:
+            p.data = p.data.to(torch.bfloat16)
 
 total = len(guides) * args.samples
 done = 0
