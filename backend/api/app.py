@@ -127,6 +127,11 @@ async def _internal_error(_: Request, e: Exception):
 
 # ------------------------------------------------------------------------------------------ routes
 
+@app.get("/")
+def root():
+    return {"service": "cortexview-api", "status": "ok", "health": "/api/health"}
+
+
 @app.get("/api/health")
 def health():
     return {"status": "ok", "render_backends": renderer.Config.from_env().available()}
