@@ -1,0 +1,65 @@
+---
+# ai-toolkit config: FLUX.2 [klein] base-9B EDIT LoRA (guide.png -> illustration)
+# Adapted from ai-toolkit's FLUX Kontext edit example; arch name from ai-toolkit's model registry.
+# Fill in the <...> paths, then:  python run.py /path/to/train_klein9b_edit.yaml
+job: extension
+config:
+  name: "cortexview_klein9b_edit_v1"
+  process:
+    - type: 'sd_trainer'
+      training_folder: "<STUDIO>/output"
+      device: cuda:0
+      network:
+        type: "lora"
+        linear: 32
+        linear_alpha: 32
+      save:
+        dtype: float16
+        save_every: 250
+        max_step_saves_to_keep: 8          # keep every checkpoint 250..2000 so you can pick by eye
+        push_to_hub: false
+      datasets:
+        - folder_path: "<STUDIO>/dataset/target"        # illustrations + .txt captions
+          control_path: "<STUDIO>/dataset/reference"    # guide.png inputs (same filenames) -> edit LoRA
+          caption_ext: "txt"
+          caption_dropout_rate: 0.05
+          shuffle_tokens: false
+          cache_latents_to_disk: true
+          resolution: [ 768 ]
+      train:
+        batch_size: 1
+        steps: 2000                         # edit LoRAs usually peak ~1000-1750; with 20 pairs expect earlier
+        gradient_accumulation_steps: 1
+        train_unet: true
+        train_text_encoder: false
+        gradient_checkpointing: true
+        noise_scheduler: "flowmatch"
+        optimizer: "adamw8bit"
+        lr: 1e-4
+        timestep_type: "weighted"
+        dtype: bf16
+      model:
+        name_or_path: "<STUDIO>/flux2-klein-base-9b"   # or "black-forest-labs/FLUX.2-klein-base-9B" (gated)
+        arch: "flux2_klein_9b"
+        quantize: true
+        quantize_te: true
+      sample:
+        sampler: "flowmatch"
+        sample_every: 250
+        sample_start_step: 0
+        width: 768
+        height: 768
+        # Use 4 guides from TEST patients (never from the training set), so samples show generalisation.
+        prompts:
+          - "turn this brain segmentation map into a CRTXV1EW illustration  --ctrl_img <STUDIO>/guides/guide/<TEST_GUIDE_1>.png"
+          - "turn this brain segmentation map into a CRTXV1EW illustration  --ctrl_img <STUDIO>/guides/guide/<TEST_GUIDE_2>.png"
+          - "turn this brain segmentation map into a CRTXV1EW illustration  --ctrl_img <STUDIO>/guides/guide/<TEST_GUIDE_3>.png"
+          - "turn this brain segmentation map into a CRTXV1EW illustration  --ctrl_img <STUDIO>/guides/guide/<TEST_GUIDE_4>.png"
+        neg: ""
+        seed: 42
+        walk_seed: false
+        guidance_scale: 4
+        sample_steps: 50                    # base model is undistilled
+meta:
+  name: "[name]"
+  version: '1.0'

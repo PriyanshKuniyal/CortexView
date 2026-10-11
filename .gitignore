@@ -3,3 +3,19 @@ data/archive/remind/
 
 # Python bytecode
 __pycache__/
+
+# Python
+.venv/
+*.pyc
+
+# Secrets
+.env
+license.txt
+
+# Derived training data (ReMIND guides, pilot QC); regenerate with scripts/synthseg
+data/guides/
+
+# Model weights / training output
+*.safetensors
+*.ckpt
+output/
