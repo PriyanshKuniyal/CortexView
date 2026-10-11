@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react'
 import { LAYERS, css } from '../layers'
 import type { DemoData } from '../demo/types'
 import type { Film } from '../film/useScrollFilm'
-import { numberWord } from '../format'
 
 export function TitleScene({ film, demo }: { film: Film; demo: DemoData }) {
   const stageRef = useRef<HTMLDivElement>(null)
@@ -31,18 +30,17 @@ export function TitleScene({ film, demo }: { film: Film; demo: DemoData }) {
     <section className="sc s0" data-name="Title" ref={film.bindScene(0)}>
       <div className="in split">
         <div>
-          <div className="mono" data-d="0.4">
-            One brain slice, {numberWord(LAYERS.length)} layers
-          </div>
           <h1 data-d="0.8">
-            <span className="em">Generative</span> where it helps. Deterministic where it matters.
+            Cortex
+            <br />
+            View
           </h1>
           <p className="lede" data-d="1.1">
-            A brain MRI, turned into an illustration you can take apart. Every number is measured from the pixels.
+            See a brain scan clearly. The layers are measured first, then shown in a way that is easier to understand.
           </p>
           <div data-d="1.3">
             <button className="cta" type="button" onClick={() => film.go(1)}>
-              Start the film ↓
+              See how it works ↓
             </button>
           </div>
           <div className="chips" data-d="1.5">

@@ -5,8 +5,9 @@ This is a 3D nnU-Net trained for T1/T1-post volumes and returns the same
 and unavailable inference runtimes deliberately fall back to the classical
 segmenter, with ``segmenter_fallback`` in the warnings.
 
-The default weights live in the repo at ``ml/weights/cortexview_nnunet`` (Git LFS).
-Set ``CORTEXVIEW_AI_WEIGHTS`` to replace them without editing application code.
+The default weights live at ``ml/weights/cortexview_nnunet`` when that copy is
+available. Set ``CORTEXVIEW_AI_WEIGHTS`` to replace it without editing
+application code.
 """
 from __future__ import annotations
 

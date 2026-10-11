@@ -1,4 +1,4 @@
-import registry from '@shared/layers.json'
+import registry from './layers.json'
 
 /** One tissue layer from `shared/layers.json` (contract C1). The JSON is the source of truth. */
 export interface Layer {

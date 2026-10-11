@@ -6,7 +6,6 @@ from pathlib import Path
 from unittest import mock
 
 import numpy as np
-
 from _setup import phantom
 from cortexview import segment_ai
 from cortexview.layers import layer_ids

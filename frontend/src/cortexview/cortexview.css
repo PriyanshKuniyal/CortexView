@@ -190,7 +190,6 @@ h2{font-size:clamp(28px,3.3vw,48px);margin:12px 0 14px}
 .ft-foot{display:flex;justify-content:space-between;gap:14px 28px;flex-wrap:wrap;margin-top:18px;padding-top:12px;border-top:1px solid var(--ink);font-family:var(--f-mono);font-size:10px;letter-spacing:.04em;color:var(--ink-2)}.ft-live{display:flex;align-items:center;gap:7px;color:var(--ink)}.ft-live i{width:7px;height:7px;background:var(--ink);opacity:var(--pulse);animation:blink 1s steps(2) infinite}
 
 /* S7 applications */
-
 /* S8 applications: numbered places on the left, the title scene's layer stack re-posed on the right */
 .s7 .split{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)}
 .apx-eyebrow{display:inline-block;margin-top:14px;padding:6px 10px;background:var(--ink);color:var(--paper-hi);font-family:var(--f-mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase}

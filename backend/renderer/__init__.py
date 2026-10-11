@@ -102,7 +102,7 @@ class Config:
             cf_accounts=account_pool,
             cf_token=_env("CF_API_TOKEN"),
             cf_tokens=token_pool,
-            cf_backend=_env("CF_MODEL", "workers-klein-4b"),
+            cf_backend=_env("CF_MODEL", "workers-flux2-dev"),
             steps=int(_env("RENDER_STEPS", "20")),
             cache_dir=Path(_env("RENDER_CACHE_DIR") or ROOT / "data" / "render_cache"),
             cache_record=_env("RENDER_CACHE_RECORD", "0") == "1",
