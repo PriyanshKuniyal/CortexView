@@ -3,3 +3,6 @@ data/archive/remind/
 
 # Python bytecode
 __pycache__/
+
+.venv
+backend/.venv
