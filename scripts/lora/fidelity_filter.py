@@ -26,6 +26,7 @@ ap.add_argument("--palette", default="palette.json")
 ap.add_argument("--out_csv", default="fidelity.csv")
 ap.add_argument("--preview_dir", default="previews")
 ap.add_argument("--threshold", type=float, default=0.85, help="min mean IoU to pass")
+ap.add_argument("--picked_out", default="", help="also write the best passing sample per guide here (picked.txt)")
 args = ap.parse_args()
 
 pal = json.loads(pathlib.Path(args.palette).read_text())
@@ -92,6 +93,11 @@ for r in best.values():
     canvas.paste(g, (0, 0))
     canvas.paste(c, (g.width, 0))
     canvas.save(prev / f"{r['mean_iou']:.3f}__{r['candidate']}")
+
+if args.picked_out:
+    # Automatic pick: best passing sample per guide, in build_dataset.py's picked.txt format.
+    pathlib.Path(args.picked_out).write_text("".join(f"{r['candidate']}\n" for r in best.values()))
+    print(f"wrote {len(best)} picks to {args.picked_out}")
 
 n_pass = sum(r["mean_iou"] >= args.threshold for r in rows)
 print(f"{len(rows)} candidates scored, {n_pass} pass (mean IoU >= {args.threshold}), "

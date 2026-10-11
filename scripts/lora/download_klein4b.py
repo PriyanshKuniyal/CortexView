@@ -1,5 +1,6 @@
 """
-Download FLUX.2 [klein] base-4B (Apache-2.0, not gated) into models/flux2-klein-base-4b for local training.
+Download FLUX.2 [klein] base-4B (Apache-2.0, not gated) into <models>/flux2-klein-base-4b for local training.
+<models> is $PLIE_MODELS, else C:/models on Windows (outside the OneDrive-synced repo), else <repo>/models.
 
 One copy of each component, laid out so both tools read the same folder:
   flux-2-klein-base-4b.safetensors   transformer, BFL single-file format (ai-toolkit; diffusers via from_single_file)
@@ -11,13 +12,15 @@ the single file.
     .venv-lora/Scripts/python scripts/lora/download_klein4b.py
 Rerunning resumes/skips finished files.
 """
+import os
 import pathlib
 import shutil
 
 from huggingface_hub import hf_hub_download, snapshot_download
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-DEST = ROOT / "models" / "flux2-klein-base-4b"
+MODELS = pathlib.Path(os.environ.get("PLIE_MODELS") or ("C:/models" if os.name == "nt" else ROOT / "models"))
+DEST = MODELS / "flux2-klein-base-4b"
 
 snapshot_download(
     "black-forest-labs/FLUX.2-klein-base-4B",

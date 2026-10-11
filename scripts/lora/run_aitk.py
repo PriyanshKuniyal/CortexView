@@ -1,11 +1,13 @@
 """
-Run an ai-toolkit job against the local FLUX.2 [klein] base-4B in models/flux2-klein-base-4b.
+Run an ai-toolkit job against the local FLUX.2 [klein] base-4B in <models>/flux2-klein-base-4b
+(<models> as in download_klein4b.py: $PLIE_MODELS, else C:/models on Windows, else <repo>/models).
 
     .venv-lora/Scripts/python scripts/lora/run_aitk.py scripts/lora/smoke_klein4b_edit.yaml
 
 What it does on top of `python run.py <config>` (ai-toolkit in third_party/ stays unmodified):
-  - sets PLIE=<repo root>, so configs can write paths as ${PLIE}/... (ai-toolkit expands ${VAR} in configs);
-  - points flux2_klein_4b's text encoder at models/flux2-klein-base-4b/text_encoder. ai-toolkit hardcodes
+  - sets PLIE=<repo root> (an existing PLIE wins, e.g. to point at another checkout's data/ and third_party/), and PLIE_MODELS=<models>, so configs can write paths as ${PLIE}/... and
+    ${PLIE_MODELS}/... (ai-toolkit expands ${VAR} in configs);
+  - points flux2_klein_4b's text encoder at <models>/flux2-klein-base-4b/text_encoder. ai-toolkit hardcodes
     "Qwen/Qwen3-4B" from the Hub there, which would download the same 8 GB a second time into the HF cache.
 """
 import os
@@ -13,9 +15,10 @@ import pathlib
 import runpy
 import sys
 
-ROOT = pathlib.Path(__file__).resolve().parents[2]
+ROOT = pathlib.Path(os.environ.get("PLIE") or pathlib.Path(__file__).resolve().parents[2])
 AITK = ROOT / "third_party" / "ai-toolkit"
-TE_DIR = ROOT / "models" / "flux2-klein-base-4b" / "text_encoder"
+MODELS = pathlib.Path(os.environ.get("PLIE_MODELS") or ("C:/models" if os.name == "nt" else ROOT / "models"))
+TE_DIR = MODELS / "flux2-klein-base-4b" / "text_encoder"
 
 if len(sys.argv) < 2:
     sys.exit(__doc__)
@@ -23,6 +26,7 @@ config = pathlib.Path(sys.argv[1]).resolve()
 assert TE_DIR.is_dir(), f"missing {TE_DIR}; run scripts/lora/download_klein4b.py first"
 
 os.environ["PLIE"] = ROOT.as_posix()
+os.environ["PLIE_MODELS"] = MODELS.as_posix()
 os.chdir(AITK)
 sys.path.insert(0, str(AITK))
 

@@ -4,8 +4,8 @@
 #
 #   .venv-lora/Scripts/python scripts/lora/run_aitk.py scripts/lora/train_klein4b_edit.yaml
 #
-# Layout (all under the repo, gitignored):
-#   models/flux2-klein-base-4b/   base model (scripts/lora/download_klein4b.py)
+# Layout (under the repo and gitignored, except the base model):
+#   ${PLIE_MODELS}/flux2-klein-base-4b/   base model, C:/models by default (scripts/lora/download_klein4b.py)
 #   data/guides/remind/           guides (guide/, splits.csv)
 #   lora_work/dataset/            build_dataset.py output: reference/ (guides) + target/ (picked illustrations + captions)
 #   lora_work/output/             checkpoints and samples (this file's training_folder)
@@ -53,7 +53,7 @@ config:
       model:
         # Transformer: flux-2-klein-base-4b.safetensors, VAE: ae.safetensors, both from this folder.
         # Text encoder: this folder's text_encoder/ (set by run_aitk.py).
-        name_or_path: "${PLIE}/models/flux2-klein-base-4b"
+        name_or_path: "${PLIE_MODELS}/flux2-klein-base-4b"
         arch: "flux2_klein_4b"
         quantize: true
         qtype: "qfloat8"

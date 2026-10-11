@@ -46,7 +46,7 @@ config:
         dtype: bf16
         skip_first_sample: true
       model:
-        name_or_path: "${PLIE}/models/flux2-klein-base-4b"
+        name_or_path: "${PLIE_MODELS}/flux2-klein-base-4b"
         arch: "flux2_klein_4b"
         quantize: true
         qtype: "qfloat8"
