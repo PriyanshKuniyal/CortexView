@@ -1,53 +1,49 @@
+"""CortexView shared contracts, as Pydantic models (docs/contracts.md).
+
+Mirrored by hand in frontend/src/cortexview/api/types.ts. Change both together.
+So far only C4 (MetricsReport) is here.
 """
-shared/contracts.py
+from __future__ import annotations
 
-Data contracts for CortexView.
-Defines Pydantic models for Contract C4 (MetricsReport).
-"""
+from typing import Literal
 
-from typing import Dict, List, Optional, Tuple
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+
+Confidence = Literal["high", "medium", "low", "empty"]
+Hemisphere = Literal["left", "right", "both", "midline"]
 
 
-class IntensityMetrics(BaseModel):
-    """Pixel intensity statistics for a layer on the active slice."""
-    mean: Optional[float] = None
-    std: Optional[float] = None
-    ratio_to_brain: Optional[float] = None
+class Intensity(BaseModel):
+    """On the 0-1 windowed slice; relative within one scan only (MRI brightness has no unit)."""
+    mean: float
+    std: float
+    ratio_to_brain: float | None          # mean / mean of gray + white matter; null for skull
 
 
 class LayerMetrics(BaseModel):
-    """Quantitative measurements for a single anatomical or finding layer."""
-    layer_id: str
     present: bool
-    confidence: str  # "high" | "medium" | "low" | "empty"
-    warnings: List[str] = Field(default_factory=list)
-    
-    # Measurements on active 2D slice
     area_px: int
-    area_mm2: Optional[float] = None
-    pct_intracranial: Optional[float] = None
-    n_components: int
-    centroid_px: Optional[Tuple[float, float]] = None    # [x, y]
-    bbox_px: Optional[Tuple[int, int, int, int]] = None  # [x0, y0, x1, y1] inclusive
-    anchor_px: Optional[Tuple[int, int]] = None          # [x, y] pin coordinate
-    
-    # Lesion-specific & orientation metrics
-    max_diameter_mm: Optional[float] = None              # Lesion only
-    hemisphere: Optional[str] = None                     # "left" | "right" | "midline" | "both"
-    
-    # 3D whole-volume measurement
-    volume_ml: Optional[float] = None                    # Total volume in mL
-    
-    # Intensity profiling
-    intensity: IntensityMetrics
+    area_mm2: float | None                # null if spacing unknown
+    pct_intracranial: float | None        # null for skull (outside the intracranial space)
+    n_components: int                     # separate blobs (8-connected)
+    centroid_px: tuple[float, float] | None              # [x, y]
+    bbox_px: tuple[int, int, int, int] | None            # [x0, y0, x1, y1], inclusive
+    max_diameter_mm: float | None         # lesion only
+    volume_ml: float | None               # only when the whole 3D mask is known
+    intensity: Intensity | None           # null when the layer is empty
+    hemisphere: Hemisphere | None         # null if orientation unknown
+    anchor_px: tuple[int, int] | None     # [x, y], the point deepest inside the largest blob
+    confidence: Confidence
+    warnings: list[str]
+
+
+class TextItem(BaseModel):
+    layer: str
+    template_id: str                      # shared/text_templates.json
+    text: str
 
 
 class MetricsReport(BaseModel):
-    """Complete Contract C4 response schema returned by the metrics engine."""
-    version: int = 1
-    slice_index: int
-    n_slices: int
-    spacing_mm: Optional[Tuple[float, float, float]] = None  # (dz, dy, dx) in mm
-    intracranial_area_mm2: Optional[float] = None
-    layers: Dict[str, LayerMetrics]
+    intracranial_area_mm2: float | None   # brain + CSF + lesion; the denominator for %
+    layers: dict[str, LayerMetrics]       # one per layers.json entry, in peel order
+    text: list[TextItem]
