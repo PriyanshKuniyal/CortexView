@@ -188,10 +188,10 @@ export function TryScene({ film }: { film: Film }) {
 
   return (
     <section
-      className={'sc s6 try2' + (showRes ? ' has-res' : '')}
+      className={'sc s7 try2' + (showRes ? ' has-res' : '')}
       data-name="Try it"
       id="try"
-      ref={film.bindScene(6)}
+      ref={film.bindScene(7)}
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
         e.preventDefault()
@@ -200,7 +200,7 @@ export function TryScene({ film }: { film: Film }) {
     >
       <div className="in">
         <div className="mono" data-d="0.3">
-          Scene 7 · Your turn
+          Scene 8 · Your turn
         </div>
         <h2 data-d="0.5">{showRes ? 'Your scan, layer by layer.' : 'Drop a scan. Peel it.'}</h2>
 

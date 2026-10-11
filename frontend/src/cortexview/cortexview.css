@@ -2,7 +2,7 @@
 /* page base (from the prototype's document wrapper) */
 :root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 
-/* Layout: a fixed 7-scene film driven by a smoothed scroll playhead. Each scene is image-first:
+/* Layout: a fixed 8-scene film driven by a smoothed scroll playhead. Each scene is image-first:
    the scan, the slices, the masks. Greyscale paper and ink; the only colour is the tissue layers. */
 :root{
   color-scheme: light;
@@ -169,9 +169,29 @@ h2{font-size:clamp(28px,3.3vw,48px);margin:12px 0 14px}
 .gc h3{font-weight:600;font-size:17px;letter-spacing:-.015em;margin:12px 0 4px}
 .gc p{font-size:13px;color:var(--ink-2);line-height:1.4}
 
-/* S6 try */
-.s6{align-items:flex-start;overflow-y:auto;overscroll-behavior:contain}
-.s6 h2{margin:8px 0 16px}
+/* S6 fine-tuned image AI */
+.s6{--train:0;--pulse:.35}
+.ft-head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px 48px}
+.ft-head h2{max-width:18ch}
+.ft-head .lede{max-width:54ch}
+.ft-spec{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;max-width:330px;font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.ft-spec span{padding:5px 7px;box-shadow:inset 0 0 0 1px var(--rule);background:rgba(255,255,255,.48)}
+.ft-flow{display:grid;grid-template-columns:minmax(0,1fr) minmax(48px,.18fr) minmax(0,1fr) minmax(48px,.18fr) minmax(0,1fr);align-items:center;gap:clamp(8px,1.5vw,20px);margin-top:clamp(22px,3vw,42px)}
+.ft-card{min-width:0;background:rgba(255,255,255,.62);box-shadow:inset 0 0 0 1px var(--rule),0 24px 50px -42px rgba(0,0,0,.5);padding:12px;transform:translateY(calc((1 - var(--train)) * 14px));opacity:calc(.35 + var(--train) * .65);transition:box-shadow .35s}
+.ft-card:hover{box-shadow:inset 0 0 0 1px var(--ink),0 24px 50px -42px rgba(0,0,0,.5)}
+.ft-card-hd{display:flex;gap:9px;align-items:baseline;margin-bottom:10px}
+.ft-card-hd span{font-family:var(--f-mono);font-size:10px;color:var(--ink-3);letter-spacing:.08em}.ft-card-hd b{font-size:14px;letter-spacing:-.01em}
+.ft-image{position:relative;aspect-ratio:1.2;background:var(--lightbox);overflow:hidden}.ft-image img{width:100%;height:100%;object-fit:contain;display:block;transform:scale(calc(1.06 - var(--train) * .06));filter:saturate(.88) contrast(1.04)}
+.ft-image::after{content:"";position:absolute;inset:-40% 0 auto;height:28%;background:linear-gradient(180deg,transparent,rgba(255,255,255,.32),transparent);transform:translateY(calc(var(--train) * 460%));mix-blend-mode:screen}.ft-image span{position:absolute;right:8px;bottom:8px;padding:3px 5px;background:rgba(0,0,0,.64);color:#fff;font-family:var(--f-mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase}
+.ft-card p{font-size:12.5px;line-height:1.42;color:var(--ink-2);margin-top:10px;min-height:3.55em}
+.ft-link{height:2px;background:var(--rule);position:relative;transform-origin:left;transform:scaleX(var(--train))}.ft-link i{position:absolute;right:-1px;top:50%;width:7px;height:7px;background:var(--ink);transform:translateY(-50%) scale(var(--pulse))}.ft-link small{position:absolute;left:50%;bottom:9px;transform:translateX(-50%);white-space:nowrap;font-family:var(--f-mono);font-size:8px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3)}
+.ft-model{background:var(--ink);color:#fff}.ft-model .ft-card-hd span,.ft-model p{color:#bcbcc1}.ft-model:hover{box-shadow:inset 0 0 0 1px var(--ink),0 0 0 2px var(--paper),0 0 0 4px var(--ink),0 24px 50px -42px rgba(0,0,0,.5)}
+.ft-core{position:relative;aspect-ratio:1.2;overflow:hidden;background:radial-gradient(circle at 50% 45%,#424248 0 1%,#1a1a1c 38%,#09090a 75%);display:grid;place-items:center}.ft-core strong{position:relative;z-index:2;font-family:var(--f-mono);font-weight:400;font-size:clamp(22px,2.2vw,34px);letter-spacing:-.06em}.ft-grid{position:absolute;inset:0;background:linear-gradient(rgba(255,255,255,.13) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.13) 1px,transparent 1px);background-size:18px 18px;opacity:.55;transform:perspective(320px) rotateX(58deg) scale(1.5) translateY(calc(20% - var(--train) * 18%));transform-origin:50% 100%}.ft-orbit{position:absolute;border:1px solid rgba(255,255,255,.42);border-radius:50%;opacity:var(--pulse)}.ft-orbit.a{width:63%;height:36%;transform:rotate(-24deg) scale(calc(.78 + var(--train) * .22))}.ft-orbit.b{width:43%;height:65%;transform:rotate(34deg) scale(calc(.78 + var(--train) * .22))}
+.ft-foot{display:flex;justify-content:space-between;gap:14px 28px;flex-wrap:wrap;margin-top:18px;padding-top:12px;border-top:1px solid var(--ink);font-family:var(--f-mono);font-size:10px;letter-spacing:.04em;color:var(--ink-2)}.ft-live{display:flex;align-items:center;gap:7px;color:var(--ink)}.ft-live i{width:7px;height:7px;background:var(--ink);opacity:var(--pulse);animation:blink 1s steps(2) infinite}
+
+/* S7 try */
+.s7{align-items:flex-start;overflow-y:auto;overscroll-behavior:contain}
+.s7 h2{margin:8px 0 16px}
 .app{display:grid;grid-template-columns:auto minmax(0,1fr);gap:clamp(20px,3vw,44px);align-items:start}
 .app .frame{width:min(calc(100svh - 190px),52vw);max-width:none}
 .pin{position:absolute;z-index:4;width:22px;height:22px;transform:translate(-50%,-50%);border:0;padding:0;cursor:pointer;background:#fff;display:grid;place-items:center;box-shadow:0 0 0 1px rgba(0,0,0,.3),0 3px 10px rgba(0,0,0,.45);transition:transform .2s,opacity .35s;border-radius:50%}
@@ -213,6 +233,7 @@ input[type=range]{width:100%;accent-color:var(--ink);margin:0}
 @media (max-width:900px){
   .sc{padding:76px 16px 60px;align-items:flex-start;overflow-y:auto}
   .s0 .split,.s2 .split,.s3 .split,.app{grid-template-columns:1fr}
+  .ft-head{align-items:flex-start;flex-direction:column}.ft-spec{justify-content:flex-start;max-width:none}.ft-flow{grid-template-columns:1fr;gap:28px}.ft-link{width:2px;height:28px;margin:-22px auto -6px;transform-origin:top;transform:scaleY(var(--train))}.ft-link i{right:auto;left:50%;top:auto;bottom:-1px;transform:translateX(-50%) scale(var(--pulse))}.ft-link small{left:calc(50% + 12px);bottom:auto;top:50%;transform:translateY(-50%)}.ft-card p{min-height:0}
   .frame,.app .frame{width:100%;max-width:min(100%,50svh)}
   .stage{max-width:min(100%,52svh);order:-1}
   .sheet{grid-template-columns:repeat(8,1fr);max-width:100%}
