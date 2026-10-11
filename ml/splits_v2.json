@@ -1,0 +1,603 @@
+{
+ "seed": 20261011,
+ "note": "Patient-level split, anonymous IDs only.",
+ "train": [
+  {
+   "id": "cv0030",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0119",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0028",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0080",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0106",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0037",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0089",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0071",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0034",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0057",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0038",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0007",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0006",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0096",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0014",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0033",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0067",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0022",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0015",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0064",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0039",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0040",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0017",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0045",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0116",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0046",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0085",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0097",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0062",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0041",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0049",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0042",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0081",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0023",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0090",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0058",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0056",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0010",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0114",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0113",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0092",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0073",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0063",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0072",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0024",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0098",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0065",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0076",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0066",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0052",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0026",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0118",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0008",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0068",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0004",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0029",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0115",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0103",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0105",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0019",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0104",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0069",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0020",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0101",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0099",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0111",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0054",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0095",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0036",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0109",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0005",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0053",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0047",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0021",
+   "source": "ixi",
+   "tumour": false
+  }
+ ],
+ "test": [
+  {
+   "id": "cv0102",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0091",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0108",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0009",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0086",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0075",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0048",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0082",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0016",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0074",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0088",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0035",
+   "source": "remind",
+   "tumour": true
+  },
+  {
+   "id": "cv0027",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0079",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0001",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0051",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0044",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0013",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0061",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0032",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0059",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0117",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0112",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0100",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0043",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0070",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0107",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0002",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0025",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0060",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0012",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0050",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0077",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0087",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0055",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0078",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0094",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0031",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0084",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0083",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0093",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0018",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0011",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0003",
+   "source": "ixi",
+   "tumour": false
+  },
+  {
+   "id": "cv0110",
+   "source": "ixi",
+   "tumour": false
+  }
+ ]
+}
