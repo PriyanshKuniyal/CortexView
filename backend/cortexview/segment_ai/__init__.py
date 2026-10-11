@@ -5,11 +5,12 @@ This is a 3D nnU-Net trained for T1/T1-post volumes and returns the same
 and unavailable inference runtimes deliberately fall back to the classical
 segmenter, with ``segmenter_fallback`` in the warnings.
 
-The default weights location is the model supplied for this installation. Set
-``CORTEXVIEW_AI_WEIGHTS`` to replace it without editing application code.
+The default weights live in the repo at ``ml/weights/cortexview_nnunet`` (Git LFS).
+Set ``CORTEXVIEW_AI_WEIGHTS`` to replace them without editing application code.
 """
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 
@@ -19,8 +20,20 @@ from ..layers import layer_ids
 from ..segment import Params, Segmentation, _auto_slice, _exclusive, analyze as classical
 
 
-DEFAULT_WEIGHTS = Path(r"C:\Users\Priyansh Kuniyal\Plie-seg-ai\ml\weights\cortexview_nnunet")
-WEIGHTS = Path(os.environ.get("CORTEXVIEW_AI_WEIGHTS", DEFAULT_WEIGHTS))
+DEFAULT_WEIGHTS = Path(__file__).resolve().parents[3] / "ml" / "weights" / "cortexview_nnunet"
+CHECKPOINT = Path("fold_all") / "checkpoint_final.pth"
+log = logging.getLogger("cortexview")
+
+
+def _weights() -> Path:
+    """The override if it holds a checkpoint, else the repo copy (a stale path from another machine is ignored)."""
+    override = os.environ.get("CORTEXVIEW_AI_WEIGHTS", "").strip()
+    if override and (Path(override) / CHECKPOINT).is_file():
+        return Path(override)
+    return DEFAULT_WEIGHTS
+
+
+WEIGHTS = _weights()
 T1 = {"T1_post", "T1_pre"}
 # nnU-Net class IDs, defined by the supplied model's dataset.json.
 CLASSES = {1: "skull", 2: "gray_matter", 3: "white_matter", 4: "csf", 5: "lesion"}
@@ -39,8 +52,11 @@ def available() -> tuple[bool, str]:
     import torch
     if not torch.cuda.is_available():
         return False, "no NVIDIA GPU"
-    if not (WEIGHTS / "fold_all" / "checkpoint_final.pth").is_file():
+    checkpoint = WEIGHTS / CHECKPOINT
+    if not checkpoint.is_file():
         return False, f"no weights in {WEIGHTS}"
+    if checkpoint.stat().st_size < 1_000_000:
+        return False, f"{checkpoint} is a Git LFS pointer; run `git lfs install` then `git lfs pull`"
     return True, ""
 
 
@@ -91,13 +107,17 @@ def analyze(img, spacing, sequence: str = "unknown", doctor: dict | None = None,
             p: Params = Params(), tissue_slices=None, lesion_hint=None) -> Segmentation:
     """Segment a supported 3D T1 volume, otherwise use the classical fallback."""
     img = np.asarray(img, np.float32)
-    usable, _ = available()
-    if usable and img.ndim == 3 and sequence in T1:
+    usable, reason = available()
+    if not usable:
+        log.warning("AI segmenter unavailable (%s); using classical", reason)
+    elif img.ndim != 3 or sequence not in T1:
+        log.warning("AI segmenter needs a 3D T1 volume (got %dD %s); using classical", img.ndim, sequence)
+    else:
         try:
             return _analyze(img, spacing, doctor)
-        except Exception:
+        except Exception as e:
             # An upload must remain usable if a CUDA or model error occurs.
-            pass
+            log.warning("AI segmenter failed (%s: %s); using classical", type(e).__name__, e)
     result = classical(img, spacing, sequence, doctor, p, tissue_slices, lesion_hint)
     result.warnings.append("segmenter_fallback")
     return result

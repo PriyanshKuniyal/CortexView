@@ -14,11 +14,12 @@ import { PeelScene } from './scenes/PeelScene'
 import { NumbersScene } from './scenes/NumbersScene'
 import { GuardrailsScene } from './scenes/GuardrailsScene'
 import { FineTuneScene } from './scenes/FineTuneScene'
+import { ApplicationsScene } from './scenes/ApplicationsScene'
 import { TryScene } from './scenes/TryScene'
 
 /** Scene lengths in viewport heights, and their names for the counter and scrubber. */
-const LEN = [1.2, 1.7, 1.8, 5, 1.4, 1.4, 2.2, 1] as const
-const NAMES = ['Title', 'The problem', 'Before / after', 'Peel', 'Numbers', 'Guardrails', 'Fine-tuned AI', 'Try it'] as const
+const LEN = [1.2, 1.7, 1.8, 5, 1.4, 1.4, 2.2, 1.8, 1] as const
+const NAMES = ['Title', 'The problem', 'Before / after', 'Peel', 'Numbers', 'Guardrails', 'Fine-tuned AI', 'Applications', 'Try it'] as const
 
 function useDemoData(): DemoData | null {
   const [demo, setDemo] = useState<DemoData | null>(() => (DEMO_SOURCE === 'synthetic' ? buildSyntheticDemo() : null))
@@ -57,6 +58,7 @@ export function CortexView() {
             <NumbersScene film={film} demo={demo} />
             <GuardrailsScene film={film} demo={demo} />
             <FineTuneScene film={film} demo={demo} />
+            <ApplicationsScene film={film} demo={demo} />
           </>
         )}
         <TryScene film={film} />

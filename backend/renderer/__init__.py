@@ -22,6 +22,7 @@ import base64
 import hashlib
 import io
 import json
+import logging
 import os
 import time
 import urllib.error
@@ -52,6 +53,8 @@ def build_prompt(present: list[str]) -> str:
             f"per region: {regions}. {no_lesion}"
             "Soft shading and subtle tissue texture inside each region. Plain black background. "
             "No text, no labels, no arrows.")
+log = logging.getLogger("cortexview")
+
 CF_URL = "https://api.cloudflare.com/client/v4/accounts/{acct}/ai/run/{model}"
 CF_MODELS = {"workers-klein-4b": "@cf/black-forest-labs/flux-2-klein-4b",
              "workers-klein-9b": "@cf/black-forest-labs/flux-2-klein-9b",
@@ -178,10 +181,14 @@ def render(guide_rgb: np.ndarray, masks: dict[str, np.ndarray], mri8: np.ndarray
                     png, name = _call_workers(cfg, guide_rgb, prompt, seed, min(cfg.call_timeout_s, remaining)), cfg.cf_backend
                 img = _decode_to(png, (w, h))
             except _Skip:
+                log.warning("render: %s backend unavailable, skipping", backend)
                 break                      # backend down or misconfigured: don't burn more seeds on it
-            except Exception:
+            except Exception as e:
+                log.warning("render: %s attempt %d failed (%s)", backend, seed + 1, type(e).__name__)
                 continue
             s = fidelity.score(img, masks, intracranial)
+            log.info("render: %s attempt %d mean_iou=%.3f phantom_lesion=%.3f%% passed=%s",
+                     name, seed + 1, s.mean_iou, s.phantom_lesion_pct, s.passed)
             if s.passed:
                 if cfg.cache_record:
                     _cache_put(cfg, key, img)
@@ -258,6 +265,7 @@ def _post(url: str, fields: dict, headers: dict, timeout: float) -> bytes:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return r.read()
     except urllib.error.HTTPError as e:
+        log.warning("render: HTTP %d: %s", e.code, e.read()[:300].decode("utf-8", "replace"))
         if e.code in (400, 401, 403, 404, 429):
             raise _Skip() from None        # bad request, wrong key/URL or quota used up: another seed won't help
         raise
@@ -283,6 +291,7 @@ def _call_workers(cfg: Config, guide_rgb: np.ndarray, prompt: str, seed: int, ti
     """
     model = CF_MODELS.get(cfg.cf_backend)
     if model is None:
+        log.warning("render: unknown CF_MODEL %r", cfg.cf_backend)
         raise _Skip()
     ref, _ = _resized_guide(guide_rgb, CF_REF_MAX)
     _, (w, h) = _resized_guide(guide_rgb, cfg.size)

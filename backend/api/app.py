@@ -41,11 +41,13 @@ def _load_dotenv(path: Path) -> None:
     """Minimal KEY=VALUE reader for backend/.env; real environment variables win."""
     if not path.is_file():
         return
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line in path.read_text(encoding="utf-8-sig")  # Notepad/PowerShell may add a BOM.splitlines():
         line = line.strip()
         if line and not line.startswith("#") and "=" in line:
             k, v = line.split("=", 1)
-            os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+            k, v = k.strip(), v.strip().strip('"').strip("'")
+            if v and not os.environ.get(k):  # blank .env values and empty shell vars never mask a value
+                os.environ[k] = v
 
 
 _load_dotenv(BACKEND / ".env")
@@ -73,6 +75,7 @@ POLL_INTERVAL_MS = 1000
 MultiPartParser.spool_max_size = MAX_UPLOAD_BYTES or 1 << 62
 
 log = logging.getLogger("cortexview")
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(name)s: %(message)s")
 jobs = JobStore(workers=int(os.environ.get("RENDER_WORKERS", "2")))
 
 app = FastAPI(title="CortexView API", version="1", docs_url="/api/docs", openapi_url="/api/openapi.json")
@@ -129,7 +132,10 @@ async def _internal_error(_: Request, e: Exception):
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "render_backends": renderer.Config.from_env().available()}
+    from cortexview import segment_ai
+    ai_ok, ai_reason = segment_ai.available()
+    return {"status": "ok", "render_backends": renderer.Config.from_env().available(),
+            "ai_segmenter": "ready" if ai_ok else ai_reason}
 
 
 @app.post("/api/analyze", response_model=AnalyzeResponse)
