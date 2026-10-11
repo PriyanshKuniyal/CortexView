@@ -1,0 +1,32 @@
+{
+ "ReMIND-002": {
+  "slice_ras": 156,
+  "tumor_cm3": 23.2,
+  "boundary_edge": 40.31,
+  "best_alternative": "shift_z+4",
+  "best_alternative_edge": 41.88,
+  "beats_flip_and_inplane_shifts": true,
+  "beats_z_shifts": false,
+  "tumor_mean_over_brain_median": 0.62
+ },
+ "ReMIND-004": {
+  "slice_ras": 109,
+  "tumor_cm3": 0.1,
+  "boundary_edge": 50.6,
+  "best_alternative": "shift_x+4",
+  "best_alternative_edge": 36.08,
+  "beats_flip_and_inplane_shifts": true,
+  "beats_z_shifts": true,
+  "tumor_mean_over_brain_median": 1.72
+ },
+ "ReMIND-008": {
+  "slice_ras": 192,
+  "tumor_cm3": 2.4,
+  "boundary_edge": 512.88,
+  "best_alternative": "shift_z+4",
+  "best_alternative_edge": 372.58,
+  "beats_flip_and_inplane_shifts": true,
+  "beats_z_shifts": true,
+  "tumor_mean_over_brain_median": 6.38
+ }
+}

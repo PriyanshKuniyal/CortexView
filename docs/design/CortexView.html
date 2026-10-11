@@ -1,0 +1,754 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>CortexView</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..900&family=IBM+Plex+Mono:wght@300;400;500&display=swap">
+<style>
+/* Layout: a fixed 7-scene film driven by a smoothed scroll playhead. Each scene is image-first:
+   the scan, the slices, the masks. Greyscale paper and ink; the only colour is the tissue layers. */
+:root{
+  color-scheme: light;
+  --paper:#f2f2f1;
+  --paper-hi:#ffffff;
+  --ink:#111112;
+  --ink-2:#525256;
+  --ink-3:#8b8b90;
+  --rule:rgba(17,17,18,.13);
+  --lightbox:#070707;
+  --scanline:#a6a6a6;
+  --f-display:"Schibsted Grotesk", "Helvetica Neue", Arial, system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+*{box-sizing:border-box}
+html{scrollbar-width:none;scroll-behavior:auto}
+html::-webkit-scrollbar{display:none}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-display);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+::selection{background:var(--ink);color:var(--paper-hi)}
+h1,h2,h3,p{margin:0}
+h1,h2{font-weight:600;letter-spacing:-.035em;line-height:1;text-wrap:balance}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.mono{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.lede{font-size:clamp(15px,1.15vw,17px);line-height:1.5;color:var(--ink-2);max-width:40ch;text-wrap:pretty}
+.em{color:var(--ink-3)}
+
+/* ambient light, greyscale */
+#bg{position:fixed;inset:0;z-index:0;pointer-events:none;background:var(--paper)}
+#bg canvas{width:100%;height:100%;display:block;filter:blur(40px);transform:scale(1.15)}
+#track{position:relative;z-index:-1}
+
+/* HUD */
+.hud{position:fixed;z-index:40;top:calc(env(safe-area-inset-top,0px) + 18px);display:flex;align-items:center;gap:12px}
+.hud.l{left:clamp(16px,2.4vw,32px)}
+.hud.r{right:clamp(16px,2.4vw,32px)}
+.skip{--cur:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cg stroke='%23111112' stroke-width='1.25' fill='none'%3E%3Cpath d='M14 3v6M14 19v6M3 14h6M19 14h6'/%3E%3Ccircle cx='14' cy='14' r='5.5' stroke-dasharray='2 2.6'/%3E%3C/g%3E%3Ccircle cx='14' cy='14' r='1.4' fill='%23111112'/%3E%3C/svg%3E") 14 14;
+  position:relative;display:inline-flex;align-items:center;gap:10px;border:0;background:none;padding:9px 14px;margin-left:-14px;
+  font-family:var(--f-mono);font-size:11.5px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);
+  cursor:var(--cur),pointer;transition:color .35s,letter-spacing .5s cubic-bezier(.2,.8,.2,1)}
+.skip *{cursor:inherit}
+.skip::before{content:"";position:absolute;inset:3px 0;background:rgba(17,17,18,.06);transform:scaleX(0);transform-origin:left;transition:transform .55s cubic-bezier(.2,.8,.2,1)}
+.skip::after{content:"";position:absolute;left:14px;right:14px;bottom:4px;height:1px;background:var(--ink);transform:scaleX(0);transform-origin:left;transition:transform .5s .08s cubic-bezier(.2,.8,.2,1)}
+.skip .tx,.skip .ar,.skip .idx{position:relative}
+.skip .idx{color:var(--ink-3);opacity:.7;transition:color .35s}
+.skip .ar{display:inline-block;transition:transform .4s cubic-bezier(.2,.8,.2,1)}
+.skip .tx::after{content:"_";margin-left:2px;opacity:0;color:var(--ink)}
+.skip .br{position:absolute;width:7px;height:7px;opacity:0;transition:opacity .3s,transform .45s cubic-bezier(.2,.8,.2,1)}
+.skip .br.a{left:0;top:0;border-left:1px solid var(--ink);border-top:1px solid var(--ink);transform:translate(-5px,-5px)}
+.skip .br.b{right:0;bottom:0;border-right:1px solid var(--ink);border-bottom:1px solid var(--ink);transform:translate(5px,5px)}
+.skip:hover,.skip:focus-visible{color:var(--ink);letter-spacing:.18em}
+.skip:hover .idx,.skip:focus-visible .idx{color:var(--ink);opacity:1}
+.skip:hover::before,.skip:focus-visible::before,.skip:hover::after,.skip:focus-visible::after{transform:scaleX(1)}
+.skip:hover .br,.skip:focus-visible .br{opacity:1;transform:none}
+.skip:hover .ar,.skip:focus-visible .ar{transform:translateX(4px)}
+.skip:hover .tx::after,.skip:focus-visible .tx::after{animation:blink .9s steps(2) infinite}
+.skip:focus-visible{outline:none}
+.counter{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);text-align:right;line-height:1.5}
+.counter b{color:var(--ink);font-weight:500}
+.brand{font-family:var(--f-display);font-weight:700;letter-spacing:-.01em;font-size:14px;text-transform:none;color:var(--ink)}
+.scrub{position:fixed;z-index:40;left:clamp(16px,2.4vw,32px);right:clamp(16px,2.4vw,32px);bottom:calc(env(safe-area-inset-bottom,0px) + 18px);display:flex;gap:4px}
+.scrub button{flex:var(--w,1);height:16px;border:0;padding:0;background:transparent;cursor:pointer;position:relative}
+.scrub button::before{content:"";position:absolute;left:0;right:0;top:7px;height:2px;background:var(--rule)}
+.scrub button::after{content:"";position:absolute;left:0;right:0;top:7px;height:2px;background:var(--ink);transform:scaleX(var(--f,0));transform-origin:left}
+.scrub button:hover::before{background:rgba(17,17,18,.3)}
+.hint{position:fixed;z-index:40;left:clamp(16px,2.4vw,32px);bottom:calc(env(safe-area-inset-bottom,0px) + 44px);display:flex;align-items:center;gap:10px;transition:opacity .4s}
+.hint .line{display:block;width:1px;height:22px;background:linear-gradient(var(--ink),transparent);animation:drip 1.8s ease-in-out infinite;transform-origin:top}
+@keyframes drip{0%{transform:scaleY(0)}60%{transform:scaleY(1);opacity:1}100%{transform:scaleY(1);opacity:0}}
+
+/* scenes */
+.sc{position:fixed;inset:0;z-index:10;display:flex;align-items:center;padding:84px clamp(16px,4vw,64px) 68px;pointer-events:none;will-change:opacity,transform;transform-origin:50% 55%}
+.sc.live{pointer-events:auto}
+.sc>.in{width:100%;max-width:1360px;margin:0 auto;min-width:0}
+.split{display:grid;gap:clamp(24px,4vw,64px);align-items:center}
+.split>*{min-width:0}
+[data-d]{will-change:transform}
+h2{font-size:clamp(28px,3.3vw,48px);margin:12px 0 14px}
+
+/* lightbox frame with scanner overlay */
+.frame{position:relative;aspect-ratio:1;width:100%;max-width:min(680px,calc(100svh - 168px));background:var(--lightbox);overflow:hidden;justify-self:center;box-shadow:0 44px 80px -44px rgba(0,0,0,.6)}
+.frame img{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+.ov{position:absolute;font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;line-height:1.5;color:var(--scanline);text-transform:uppercase;pointer-events:none;z-index:3}
+.ov.tl{left:12px;top:10px}.ov.tr{right:12px;top:10px;text-align:right}.ov.bl{left:12px;bottom:10px}.ov.br{right:12px;bottom:10px;text-align:right}
+.tick{position:absolute;inset:0;pointer-events:none;z-index:2;background:
+ linear-gradient(var(--scanline),var(--scanline)) 50% 0/1px 8px no-repeat,
+ linear-gradient(var(--scanline),var(--scanline)) 50% 100%/1px 8px no-repeat,
+ linear-gradient(var(--scanline),var(--scanline)) 0 50%/8px 1px no-repeat,
+ linear-gradient(var(--scanline),var(--scanline)) 100% 50%/8px 1px no-repeat;opacity:.6}
+
+/* S0 title */
+.s0 .split{grid-template-columns:minmax(0,.72fr) minmax(0,1.28fr)}
+.s0 h1{font-size:clamp(32px,3.9vw,58px);margin:16px 0 18px}
+.s0 .lede{margin-bottom:26px}
+.chips{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:30px;padding-top:16px;border-top:1px solid var(--rule)}
+.chips span{display:flex;align-items:center;gap:7px;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.chips i{width:9px;height:9px;display:block;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
+.stage{position:relative;aspect-ratio:1;width:100%;max-width:min(860px,calc(100svh - 140px));justify-self:center;perspective:1700px}
+.stack{position:absolute;inset:0 0 6%;transform-style:preserve-3d;transform:rotateX(var(--rx,58deg)) rotateZ(var(--rz,-34deg))}
+.plane{position:absolute;inset:0;transform:translateZ(calc(var(--i)*var(--gap,30px)))}
+.plane img{width:100%;height:100%;display:block;filter:drop-shadow(0 16px 14px rgba(0,0,0,.18))}
+.plane.base img{filter:drop-shadow(0 30px 34px rgba(0,0,0,.35))}
+.cta{display:inline-flex;align-items:center;gap:12px;border:0;cursor:pointer;background:transparent;font-weight:600;font-size:15px;padding:0 0 4px;color:var(--ink);border-bottom:1.5px solid var(--ink)}
+.cta:hover{color:var(--ink-2);border-color:var(--ink-2)}
+
+/* S1 slices */
+.s1head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:8px 32px;margin-bottom:20px}
+.s1head h2{margin-bottom:0}
+.sheet{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;max-width:min(100%,calc((100svh - 290px)*3));margin:0 auto}
+.tile{position:relative;aspect-ratio:1;background:var(--lightbox);overflow:hidden;opacity:.22;transition:opacity .35s,box-shadow .35s}
+.tile canvas{width:100%;height:100%;display:block}
+.tile span{position:absolute;left:4px;top:3px;font-family:var(--f-mono);font-size:9px;letter-spacing:.04em;color:var(--scanline)}
+.tile.on{opacity:1}
+.sheet.pick .tile{opacity:.16}
+.sheet.pick .tile.key{opacity:1;box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--ink);z-index:2}
+.sheet.pick .tile.key span{color:#fff}
+.s1foot{display:flex;justify-content:space-between;gap:16px;margin-top:14px}
+
+/* S2 before/after */
+.s2 .split{grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr)}
+.ba{cursor:ew-resize;touch-action:pan-y}
+.ba .top{clip-path:inset(0 0 0 var(--x,90%))}
+.ba .bar{position:absolute;top:0;bottom:0;left:var(--x,90%);width:1px;background:#fff;z-index:4;pointer-events:none}
+.ba .knob{position:absolute;z-index:4;top:50%;left:var(--x,90%);transform:translate(-50%,-50%);font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;color:var(--lightbox);background:#fff;padding:5px 7px;pointer-events:none}
+.ba input{position:absolute;inset:0;width:100%;height:100%;opacity:0;margin:0;cursor:ew-resize;z-index:5}
+.ba:focus-within{outline:2px solid var(--ink);outline-offset:4px}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:28px;border-top:1px solid var(--rule);padding-top:16px}
+.facts b{display:block;font-family:var(--f-mono);font-weight:300;font-size:clamp(26px,2.6vw,38px);letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.facts span{font-size:12.5px;color:var(--ink-2);display:block;margin-top:8px;line-height:1.35}
+
+/* S3 peel */
+.s3 .split{grid-template-columns:minmax(0,1.35fr) minmax(0,.65fr)}
+.peel img{transform-origin:50% 50%}
+.pcard{display:grid}
+.pcard>div{grid-area:1/1;min-width:0;transition:opacity .5s,transform .6s cubic-bezier(.2,.8,.2,1),filter .5s}
+.pcard>div.off{opacity:0;transform:translateY(16px);filter:blur(5px)}
+.pcard h3{display:flex;align-items:center;gap:10px;font-weight:600;font-size:clamp(22px,2vw,30px);letter-spacing:-.025em;line-height:1.1;margin:10px 0 10px}
+.pcard h3 i{width:14px;height:14px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.pcard .num{margin-top:16px;font-family:var(--f-mono);font-size:12px;line-height:1.6;color:var(--ink);max-width:40ch;border-left:2px solid var(--ink);padding-left:12px}
+.pbar{display:flex;gap:5px;margin-top:22px}
+.pbar span{flex:1;height:3px;background:var(--rule);position:relative;overflow:hidden}
+.pbar span::after{content:"";position:absolute;inset:0;background:var(--c,var(--ink));transform:scaleX(var(--f,0));transform-origin:left}
+
+/* S4 numbers */
+.comp{margin-top:20px}
+.comp .bar{display:flex;height:44px;background:var(--lightbox);overflow:hidden;transform:scaleX(var(--f,1));transform-origin:left}
+.comp .bar i{display:block;height:100%}
+.comp .key{display:flex;flex-wrap:wrap;gap:6px 22px;margin-top:10px;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-2)}
+.comp .key span{display:flex;align-items:center;gap:7px}
+.comp .key i{width:9px;height:9px;display:block;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
+.comp .key b{color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}
+.nums{display:grid;grid-template-columns:repeat(4,1fr);margin-top:26px;border-top:1px solid var(--ink)}
+.nm{padding:16px 16px 18px 0;border-bottom:1px solid var(--rule);min-width:0}
+.nm .v{font-family:var(--f-mono);font-weight:300;font-size:clamp(34px,4.2vw,62px);letter-spacing:-.05em;line-height:.95;font-variant-numeric:tabular-nums}
+.nm .v small{font-size:.42em;letter-spacing:0;margin-left:3px;color:var(--ink-2)}
+.nm .d{margin-top:8px;font-size:12.5px;color:var(--ink-2);line-height:1.35;max-width:24ch}
+
+/* S5 guardrails */
+.gr{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(12px,1.6vw,22px);margin-top:22px}
+.gc{min-width:0}
+.gc .im{position:relative;aspect-ratio:4/3;background:var(--lightbox);overflow:hidden}
+.gc .im img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block}
+.gc .im .tag{position:absolute;z-index:3;font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:rgba(0,0,0,.55);padding:4px 6px;left:8px;bottom:8px;max-width:calc(100% - 16px)}
+.gc .im .big{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-mono);font-weight:300;font-size:clamp(30px,3.4vw,48px);color:#fff;letter-spacing:-.03em;z-index:3}
+.gc h3{font-weight:600;font-size:17px;letter-spacing:-.015em;margin:12px 0 4px}
+.gc p{font-size:13px;color:var(--ink-2);line-height:1.4}
+
+/* S6 try */
+.s6{align-items:flex-start;overflow-y:auto;overscroll-behavior:contain}
+.s6 h2{margin:8px 0 16px}
+.app{display:grid;grid-template-columns:auto minmax(0,1fr);gap:clamp(20px,3vw,44px);align-items:start}
+.app .frame{width:min(calc(100svh - 190px),52vw);max-width:none}
+.pin{position:absolute;z-index:4;width:22px;height:22px;transform:translate(-50%,-50%);border:0;padding:0;cursor:pointer;background:#fff;display:grid;place-items:center;box-shadow:0 0 0 1px rgba(0,0,0,.3),0 3px 10px rgba(0,0,0,.45);transition:transform .2s,opacity .35s;border-radius:50%}
+.pin i{width:10px;height:10px;border-radius:50%;display:block}
+.pin:hover{transform:translate(-50%,-50%) scale(1.2)}
+.pin.sel{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--ink),0 3px 10px rgba(0,0,0,.45)}
+.pin.off{opacity:0;pointer-events:none}
+.layers img{transition:opacity .55s}
+.layers img.off{opacity:0}
+.badge{position:absolute;z-index:4;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:rgba(7,7,7,.75);padding:8px 12px;display:flex;gap:10px;align-items:center}
+.badge .sp{width:7px;height:7px;background:#fff;animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+.panel{display:grid;gap:16px;min-width:0;max-width:420px}
+.drop{position:relative;display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;background:rgba(255,255,255,.7);box-shadow:inset 0 0 0 1px var(--ink);transition:background .2s}
+.drop:hover,.drop.over{background:var(--paper-hi);box-shadow:inset 0 0 0 2px var(--ink)}
+.drop b{display:block;font-weight:600;font-size:15px}
+.drop span{font-size:13px;color:var(--ink-2)}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.pipe{list-style:none;margin:0;padding:0;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase}
+.pipe li{display:grid;grid-template-columns:14px 1fr auto;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--rule);color:var(--ink-3)}
+.pipe li .st{width:8px;height:8px;box-shadow:inset 0 0 0 1px var(--ink-3)}
+.pipe li.run{color:var(--ink)} .pipe li.run .st{background:var(--ink-2);box-shadow:none;animation:blink .6s steps(2) infinite}
+.pipe li.ok{color:var(--ink)} .pipe li.ok .st{background:var(--ink);box-shadow:none}
+.ctl{display:grid;gap:8px}
+.ctl .row{display:flex;justify-content:space-between;align-items:baseline}
+.ctl .row span:last-child{font-size:13px;color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--ink);margin:0}
+.seg{display:flex;box-shadow:inset 0 0 0 1px var(--ink)}
+.seg button{flex:1;border:0;background:transparent;padding:8px 6px;cursor:pointer;font-size:13px;font-weight:500}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--paper-hi)}
+.card{background:rgba(255,255,255,.8);box-shadow:inset 0 0 0 1px var(--rule);padding:14px 16px}
+.card .hd{display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px}
+.card .hd i{width:11px;height:11px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.card dl{display:grid;grid-template-columns:1fr auto;gap:5px 14px;margin:10px 0 0;font-size:13px}
+.card dt{color:var(--ink-2)}
+.card dd{margin:0;font-family:var(--f-mono);font-size:12px;font-variant-numeric:tabular-nums;text-align:right}
+.note{font-size:12px;color:var(--ink-2);line-height:1.5}
+
+@media (max-width:900px){
+  .sc{padding:76px 16px 60px;align-items:flex-start;overflow-y:auto}
+  .s0 .split,.s2 .split,.s3 .split,.app{grid-template-columns:1fr}
+  .frame,.app .frame{width:100%;max-width:min(100%,50svh)}
+  .stage{max-width:min(100%,52svh);order:-1}
+  .sheet{grid-template-columns:repeat(8,1fr);max-width:100%}
+  .nums{grid-template-columns:1fr 1fr}
+  .gr{grid-template-columns:1fr 1fr}
+  .facts{grid-template-columns:1fr 1fr 1fr}
+  .counter .t{display:none}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+
+<div id="bg" aria-hidden="true"><canvas id="bgc" width="160" height="100"></canvas></div>
+<div id="track"></div>
+
+<div class="hud l"><button class="skip" id="skip" type="button" title="Shortcut: S"><span class="br a"></span><span class="br b"></span><span class="idx">[S]</span><span class="tx" id="skipTx">Skip to the demo</span><span class="ar" id="skipAr">→</span></button></div>
+<div class="hud r"><div class="counter"><span class="brand">CortexView</span><br><b id="scNum">01</b> / 07 <span class="t" id="scName">· Title</span></div></div>
+<div class="hint mono" id="hint"><span class="line"></span>Scroll to play</div>
+<nav class="scrub" id="scrub" aria-label="Scenes"></nav>
+
+<main>
+<!-- 0 TITLE -->
+<section class="sc s0" data-name="Title"><div class="in split">
+  <div>
+    <div class="mono" data-d="0.4">One brain slice, five layers</div>
+    <h1 data-d="0.8"><span class="em">Generative</span> where it helps. Deterministic where it matters.</h1>
+    <p class="lede" data-d="1.1">A brain MRI, turned into an illustration you can take apart. Every number is measured from the pixels.</p>
+    <div data-d="1.3"><button class="cta" type="button" data-go="1">Start the film ↓</button></div>
+    <div class="chips" id="chips" data-d="1.5"></div>
+  </div>
+  <div class="stage" id="stage" data-d="0.3"><div class="stack" id="stack"></div></div>
+</div></section>
+
+<!-- 1 SLICES -->
+<section class="sc s1" data-name="The problem"><div class="in">
+  <div class="s1head">
+    <div><div class="mono" data-d="0.4">Scene 2 · The problem</div><h2 data-d="0.6">192 grey slices. One scan.</h2></div>
+    <p class="lede" data-d="0.8">Radiologists train for years to read these. Everyone else, including the patient, sees fog.</p>
+  </div>
+  <div class="sheet" id="sheet" data-d="1"></div>
+  <div class="s1foot mono" data-d="1.1"><span>Axial · inferior → superior</span><span id="sheetNote">Every 4th slice shown</span></div>
+</div></section>
+
+<!-- 2 BEFORE/AFTER -->
+<section class="sc s2" data-name="Before / after"><div class="in split">
+  <div>
+    <div class="mono" data-d="0.4">Scene 3 · Before and after</div>
+    <h2 data-d="0.7">Same slice. Now readable.</h2>
+    <p class="lede" data-d="1">Scroll, or drag across the scan.</p>
+    <div class="facts" data-d="1.3">
+      <div><b>&lt;1 s</b><span>find and measure five layers</span></div>
+      <div><b>~10 s</b><span>illustration arrives</span></div>
+      <div><b>1:1</b><span>colour only on real tissue</span></div>
+    </div>
+  </div>
+  <div class="frame ba" id="ba" data-d="0.5">
+    <img id="baB" alt="Raw MRI slice"><img id="baT" class="top" alt="The same slice as illustrated layers">
+    <div class="tick"></div>
+    <div class="ov tl">Synth-001<br>Ax T1 + C</div><div class="ov tr" id="baTR">Raw</div>
+    <div class="ov bl">SL 96 / 192<br>0.56 mm/px</div><div class="ov br">Phantom<br>not a patient</div>
+    <div class="bar"></div><div class="knob">◂ ▸</div>
+    <input type="range" id="baR" min="0" max="100" value="90" aria-label="Move the before and after divider">
+  </div>
+</div></section>
+
+<!-- 3 PEEL -->
+<section class="sc s3" data-name="Peel"><div class="in split">
+  <div class="frame peel" id="peel" data-d="0.35">
+    <div class="tick"></div>
+    <div class="ov tl">Synth-001<br>Peel</div><div class="ov tr" id="peelTR">5 / 5 layers</div>
+    <div class="ov bl">SL 96 / 192</div><div class="ov br">Outside in</div>
+  </div>
+  <div>
+    <div class="mono" data-d="0.5">Scene 4 · Peel it, outside in</div>
+    <div class="pcard" id="pcard" data-d="0.8"></div>
+    <div class="pbar" id="pbar" data-d="1.1"></div>
+  </div>
+</div></section>
+
+<!-- 4 NUMBERS -->
+<section class="sc s4" data-name="Numbers"><div class="in">
+  <div class="mono" data-d="0.4">Scene 5 · By the numbers</div>
+  <h2 data-d="0.6">Measured on this slice. Tested on real scans.</h2>
+  <div class="comp" data-d="0.8"><div class="bar" id="compBar"></div><div class="key" id="compKey"></div></div>
+  <div class="nums" data-d="1.0">
+    <div class="nm"><div class="v" data-count="0">0</div><div class="d">numbers written by AI</div></div>
+    <div class="nm"><div class="v" data-count="114">114</div><div class="d">ReMIND patients, surgeon-reviewed outlines · TCIA</div></div>
+    <div class="nm"><div class="v" data-count="663">663</div><div class="d">pre-op MRI and label series, 10.9 GB</div></div>
+    <div class="nm"><div class="v" data-count="3929">3929</div><div class="d">extra slices with checked lesion masks</div></div>
+    <div class="nm"><div class="v" data-count="4" data-suffix="B">4</div><div class="d">parameters, FLUX.2 klein base · Apache-2.0</div></div>
+    <div class="nm"><div class="v" data-count="5" data-suffix="layers">5</div><div class="d">tissue layers, scalp to lesion</div></div>
+    <div class="nm"><div class="v" data-count="300" data-suffix="MB">300</div><div class="d">largest upload</div></div>
+    <div class="nm"><div class="v" data-count="5" data-suffix="min">5</div><div class="d">max time in memory. Nothing hits disk</div></div>
+  </div>
+</div></section>
+
+<!-- 5 GUARDRAILS -->
+<section class="sc s5" data-name="Guardrails"><div class="in">
+  <div class="mono" data-d="0.4">Scene 6 · Guardrails</div>
+  <h2 data-d="0.6">Pretty is easy. Trustworthy is the work.</h2>
+  <div class="gr" id="gr">
+    <div class="gc" data-d="0.8"><div class="im" id="g1"><span class="tag">Suspected lesion · not a diagnosis</span></div><h3>Not a diagnosis</h3><p>An educational aid. Every screen says so.</p></div>
+    <div class="gc" data-d="1.0"><div class="im" id="g2"><span class="tag" id="g2t"></span></div><h3>Counted, not generated</h3><p>Areas come from mask pixels × pixel size.</p></div>
+    <div class="gc" data-d="1.2"><div class="im" id="g3"><span class="tag">Clipped to segmentation</span></div><h3>Clipped to the masks</h3><p>The picture can't invent anatomy.</p></div>
+    <div class="gc" data-d="1.4"><div class="im" id="g4"><span class="big">≤ 5:00</span><span class="tag">In memory · deleted on fetch</span></div><h3>Nothing kept</h3><p>No patient details in logs or filenames.</p></div>
+  </div>
+</div></section>
+
+<!-- 6 TRY -->
+<section class="sc s6" data-name="Try it" id="try"><div class="in">
+  <div class="mono" data-d="0.3">Scene 7 · Your turn</div>
+  <h2 data-d="0.5">Drop a scan. Peel it.</h2>
+  <div class="app" data-d="0.8">
+    <div class="frame" id="viewer">
+      <img id="vMri" alt="MRI base slice">
+      <div class="layers" id="vLayers"></div>
+      <div id="vPins"></div>
+      <div class="tick"></div>
+      <div class="ov tl">Synth-001<br>Ax T1 + C</div><div class="ov tr" id="vTR">Illustration</div>
+      <div class="ov bl">SL 96 / 192<br>0.56 mm/px</div><div class="ov br">Educational aid<br>not for diagnosis</div>
+      <div class="badge" id="vBadge" hidden><span class="sp"></span>Painting illustration</div>
+    </div>
+    <div class="panel">
+      <label class="drop" id="drop">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 16V4m0 0l-4 4m4-4l4 4M4 15v4h16v-4"/></svg>
+        <div><b>Drop .dcm files or a .zip</b><span>or click to choose · up to 300 MB</span></div>
+        <input type="file" id="file" accept=".dcm,.zip" multiple aria-label="Choose DICOM files">
+      </label>
+      <ol class="pipe" id="pipe">
+        <li class="ok"><span class="st"></span><span>Read DICOM</span><span class="tm">0.2 s</span></li>
+        <li class="ok"><span class="st"></span><span>Find five layers</span><span class="tm">0.5 s</span></li>
+        <li class="ok"><span class="st"></span><span>Measure each layer</span><span class="tm">0.1 s</span></li>
+        <li class="ok"><span class="st"></span><span>Paint the illustration</span><span class="tm">9.8 s</span></li>
+      </ol>
+      <div class="ctl"><div class="row"><label class="mono" for="peelR">Peel</label><span id="peelVal">All layers</span></div><input type="range" id="peelR" min="0" max="5" step="1" value="0"></div>
+      <div class="ctl"><span class="mono">View</span><div class="seg" role="group" aria-label="View"><button type="button" data-m="ill" aria-pressed="true">Illustration</button><button type="button" data-m="flat" aria-pressed="false">Flat</button><button type="button" data-m="raw" aria-pressed="false">MRI</button></div></div>
+      <div class="card" id="card"></div>
+      <p class="note" id="note">Preview build: runs a built-in synthetic scan. Dropped files aren't uploaded or read yet. <button class="cta" type="button" id="rerun" style="font-size:12px">Run it again</button></p>
+    </div>
+  </div>
+</div></section>
+</main>
+
+<script>
+(() => {
+/* ---------- layer registry (shared/layers.json) ---------- */
+const LAYERS = [
+  {id:'skull', label:1, name:'Skull / scalp', rgb:[222,184,135], order:1, desc:'Bone, scalp and other tissue outside the brain.'},
+  {id:'gray_matter', label:2, name:'Gray matter', rgb:[196,120,170], order:2, desc:"The brain's outer layer (cortex), where most nerve cell bodies are."},
+  {id:'white_matter', label:3, name:'White matter', rgb:[245,240,225], order:3, desc:'Wiring that connects brain regions.'},
+  {id:'csf', label:4, name:'CSF / ventricles', rgb:[70,140,230], order:4, desc:'Fluid around the brain and in the ventricles.'},
+  {id:'lesion', label:10, name:'Suspected lesion', rgb:[230,40,40], order:5, desc:'An area that looks different from the tissue around it. Not a diagnosis.'},
+];
+const css = c => `rgb(${c.join(',')})`;
+
+/* ---------- synthetic axial phantom (z = slice position, 0 = mid) ---------- */
+const vent = [];
+for (const s of [-1,1]) for (let t=0;t<=1.0001;t+=1/36) vent.push([s*(0.045+0.12*t*t), -0.30+0.60*t, 0.028+0.024*Math.sin(Math.PI*t)]);
+function phantom(n, z, rnd){
+  const h=n/2, LBL=new Uint8Array(n*n), MRI=new Float32Array(n*n);
+  const sc=Math.max(.12, Math.sqrt(Math.max(0,1-z*z))), vOn=Math.abs(z)<.42, lesS=Math.sqrt(Math.max(0,1-(z/.22)**2));
+  for (let j=0;j<n;j++) for (let i=0;i<n;i++){
+    const k=j*n+i, x=(i-h+.5)/h/sc, y=(j-h+.5)/h/sc;
+    const ax=0.74*(1+0.05*y), ay=0.9, nx=x/ax, ny=y/ay, r=Math.hypot(nx,ny), th=Math.atan2(ny,nx);
+    let lab=0, m=0;
+    if (r<1){
+      const rb=0.86+0.006*Math.sin(31*th)+0.004*Math.sin(17*th+1);
+      if (r>=rb){
+        lab=1; const q=(r-rb)/(1-rb);
+        m = q<.12 ? .14 : q<.52 ? (Math.abs(q-.32)<.06 ? .48 : .06) : .74*(1-.5*Math.max(0,q-.85)/.15);
+      } else {
+        const ph=10*th+0.7*Math.sin(3*th)+0.4*Math.sin(5*th+2), sn=Math.abs(Math.sin(ph));
+        const wm=0.5+0.22*Math.pow(sn,0.55)-0.08*Math.exp(-(x*x)/0.004)*(Math.abs(y)>.35?1:0);
+        lab=2; m=.42;
+        if (r<wm){lab=3; m=.68;}
+        if (r>rb-0.024){lab=4; m=.08;}
+        else if (lab===2 && sn<0.075){lab=4; m=.1;}
+        if (Math.abs(x)<0.012 && Math.abs(y)>0.36){lab=4; m=.08;}
+        if (vOn && Math.abs(x)<0.26 && Math.abs(y)<0.42){
+          for (const [px,py,w] of vent){ if (Math.hypot(x-px,y-py)<w){lab=4; m=.07; break;} }
+        }
+        if (lesS>0){
+          const lx=x-0.31, ly=y+0.30, lr=Math.hypot(lx,ly), la=Math.atan2(ly,lx);
+          const R=0.12*lesS*(1+0.13*Math.sin(3*la+1)+0.07*Math.sin(5*la));
+          if (lr<R){lab=10; const q=lr/R; m = q>.72 ? .95 : .24+.1*q;}
+          else if (lr<R*1.6 && (lab===2||lab===3)) m*=.82;
+        }
+      }
+    }
+    LBL[k]=lab; MRI[k]= lab? Math.max(0, m+(rnd()-.5)*.07) : rnd()*.02;
+  }
+  const t=new Float32Array(MRI);
+  for (let j=1;j<n-1;j++) for (let i=1;i<n-1;i++){const k=j*n+i; MRI[k]=(t[k]*4+t[k-1]+t[k+1]+t[k-n]+t[k+n])/8;}
+  return {LBL,MRI};
+}
+const mkRnd = s => () => (s = (s*1664525 + 1013904223) >>> 0) / 4294967296;
+const N = 440, H = N/2, SP = 0.56; // px, mm per px
+const {LBL, MRI} = phantom(N, 0, mkRnd(7));
+// distance to nearest label boundary (chamfer)
+const D=new Float32Array(N*N);
+for (let j=0;j<N;j++) for (let i=0;i<N;i++){const k=j*N+i,l=LBL[k];
+  D[k]=(i>0&&LBL[k-1]!==l)||(i<N-1&&LBL[k+1]!==l)||(j>0&&LBL[k-N]!==l)||(j<N-1&&LBL[k+N]!==l)?0:1e9;}
+for (let j=1;j<N;j++) for (let i=1;i<N-1;i++){const k=j*N+i; D[k]=Math.min(D[k],D[k-1]+1,D[k-N]+1,D[k-N-1]+1.414,D[k-N+1]+1.414);}
+for (let j=N-2;j>=0;j--) for (let i=N-2;i>0;i--){const k=j*N+i; D[k]=Math.min(D[k],D[k+1]+1,D[k+N]+1,D[k+N+1]+1.414,D[k+N-1]+1.414);}
+
+/* ---------- images ---------- */
+const cv=document.createElement('canvas'); cv.width=cv.height=N; const cx=cv.getContext('2d');
+function paint(fn){ const im=cx.createImageData(N,N), d=im.data;
+  for (let k=0;k<N*N;k++){ const c=fn(k); if(!c) continue; d[k*4]=c[0]; d[k*4+1]=c[1]; d[k*4+2]=c[2]; d[k*4+3]=c[3]??255; }
+  cx.putImageData(im,0,0); return cv.toDataURL('image/png'); }
+const byLabel = {}; LAYERS.forEach(L=>byLabel[L.label]=L);
+function illus(k){
+  const l=LBL[k]; if(!l) return null; const L=byLabel[l], [R,G,B]=L.rgb;
+  const i=k%N, j=(k/N)|0, x=(i-H)/H, y=(j-H)/H, d=D[k];
+  let s=(0.74+0.26*Math.min(1,d/7))*(1+0.12*(-x-y)*.6);
+  if (l===1) s*=0.72+0.42*MRI[k];
+  else if (l===10) s*=0.85+0.35*MRI[k];
+  else s*=1+(MRI[k]-.4)*.25;
+  if (d<1.1) s*=0.6;
+  return [Math.min(255,R*s),Math.min(255,G*s),Math.min(255,B*s)];
+}
+const grey = v => Math.min(255,Math.pow(v,.9)*270);
+const IMG = {
+  mri: paint(k=>{const v=grey(MRI[k]); return LBL[k]?[v,v,v]:null;}),
+  mriBlack: paint(k=>{const v=grey(MRI[k]); return [v,v,v];}),
+  mriDim: paint(k=>{const v=grey(MRI[k])*.28; return [v,v,v];}),
+  illus: paint(illus),
+  mask: paint(k=>LBL[k]===10?[255,255,255]:LBL[k]?[34,34,34]:[0,0,0]),
+  lesionOnMri: paint(k=>{ if(LBL[k]===10) return D[k]<1.5?[255,255,255]:illus(k); const v=grey(MRI[k])*.75; return [v,v,v]; }),
+  layer:{}, flatLayer:{}
+};
+LAYERS.forEach(L=>{
+  IMG.layer[L.id]=paint(k=>LBL[k]===L.label?illus(k):null);
+  IMG.flatLayer[L.id]=paint(k=>LBL[k]===L.label?L.rgb:null);
+});
+
+/* ---------- metrics (math on masks) ---------- */
+const M={}; let intracranial=0;
+LAYERS.forEach(L=>{
+  let n=0,sx=0,sy=0,best=-1,ax=0,ay=0; const pts=[];
+  for (let k=0;k<N*N;k++) if (LBL[k]===L.label){ n++; const i=k%N,j=(k/N)|0; sx+=i; sy+=j; if(D[k]>best){best=D[k];ax=i;ay=j;} if(L.id==='lesion'&&D[k]===0) pts.push([i,j]); }
+  const seen=new Uint8Array(N*N); let comps=0;
+  for (let k=0;k<N*N;k++) if (LBL[k]===L.label && !seen[k]){ comps++; const st=[k]; seen[k]=1;
+    while(st.length){const p=st.pop(),i=p%N; for(const q of [p-1,p+1,p-N,p+N]){ if(q<0||q>=N*N) continue; if((q===p-1&&i===0)||(q===p+1&&i===N-1)) continue; if(!seen[q]&&LBL[q]===L.label){seen[q]=1;st.push(q);} }}}
+  let diam=null;
+  if (pts.length){ let m=0; for(let a=0;a<pts.length;a++) for(let b=a+1;b<pts.length;b++){const dd=(pts[a][0]-pts[b][0])**2+(pts[a][1]-pts[b][1])**2; if(dd>m)m=dd;} diam=Math.sqrt(m)*SP; }
+  M[L.id]={px:n, mm2:n*SP*SP, comps, cx:sx/n, cy:sy/n, anchor:[ax/N*100, ay/N*100], diam, hemi: sx/n>H?'left':'right'};
+  if (L.id!=='skull') intracranial+=n;
+});
+LAYERS.forEach(L=>{ M[L.id].pct = L.id==='skull'?null:M[L.id].px/intracranial*100; });
+const cm2 = id => (M[id].mm2/100).toFixed(1);
+const pct = id => M[id].pct.toFixed(1);
+function sentence(id){
+  switch(id){
+    case 'skull': return `Skull and scalp: about ${cm2(id)} cm² of this slice.`;
+    case 'csf': return `Fluid: about ${cm2(id)} cm², ${pct(id)}% of the space inside the skull.`;
+    case 'lesion': return `About ${cm2(id)} cm², ${pct(id)}% of the space inside the skull. Longest span about ${M[id].diam.toFixed(0)} mm.`;
+    default: return `${byId(id).name}: about ${cm2(id)} cm², ${pct(id)}% of the space inside the skull.`;
+  }
+}
+const byId = id => LAYERS.find(L=>L.id===id);
+
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- title: exploded stack ---------- */
+const stack=$('#stack'), stage=$('#stage');
+const order3d=[['base',IMG.mri],...['lesion','csf','white_matter','gray_matter','skull'].map(id=>[id,IMG.layer[id]])];
+stack.innerHTML=order3d.map(([id,src],i)=>`<div class="plane${id==='base'?' base':''}" style="--i:${i}"><img alt="" src="${src}"></div>`).join('');
+$('#chips').innerHTML=`<span><i style="background:#777"></i>MRI</span>`+LAYERS.map(L=>`<span><i style="background:${css(L.rgb)}"></i>${L.name}</span>`).join('');
+let mx=0,my=0;
+stage.addEventListener('pointermove',e=>{const r=stage.getBoundingClientRect(); mx=(e.clientX-r.left)/r.width-.5; my=(e.clientY-r.top)/r.height-.5;});
+stage.addEventListener('pointerleave',()=>{mx=my=0;});
+let tmx=0,tmy=0;
+
+/* ---------- slice contact sheet ---------- */
+const sheet=$('#sheet'), TN=96, NT=48, KEY=23;
+for (let t=0;t<NT;t++){
+  const sl=(t+1)*4, z=sl/96-1, {LBL:lb,MRI:mr}=phantom(TN,z,mkRnd(100+t));
+  const tile=document.createElement('div'); tile.className='tile'+(t===KEY?' key':'');
+  const c=document.createElement('canvas'); c.width=c.height=TN; const g2=c.getContext('2d'), im=g2.createImageData(TN,TN);
+  for (let k=0;k<TN*TN;k++){ const v=grey(mr[k]); im.data[k*4]=im.data[k*4+1]=im.data[k*4+2]=v; im.data[k*4+3]=255; }
+  g2.putImageData(im,0,0); tile.appendChild(c);
+  const s=document.createElement('span'); s.textContent=sl; tile.appendChild(s);
+  sheet.appendChild(tile);
+}
+const tiles=[...sheet.children];
+
+/* ---------- before / after ---------- */
+const ba=$('#ba'), baR=$('#baR');
+$('#baB').src=IMG.mriBlack; $('#baT').src=IMG.illus;
+let baManual=false;
+const setBA=x=>{ba.style.setProperty('--x',x+'%'); baR.value=x; $('#baTR').textContent = x>66?'Raw':x<34?'CortexView':'Raw · CortexView';};
+baR.addEventListener('input',()=>{baManual=true; setBA(+baR.value);});
+
+/* ---------- peel ---------- */
+const peel=$('#peel');
+peel.insertAdjacentHTML('afterbegin',`<img alt="" src="${IMG.mriBlack}">`+LAYERS.map(L=>`<img data-o="${L.order}" alt="${L.name}" src="${IMG.layer[L.id]}">`).join(''));
+const peelImgs=$$('#peel img[data-o]');
+const totalCm=(intracranial*SP*SP/100).toFixed(0);
+const cards=[{lab:'All 5 layers',title:'The whole slice',c:null,desc:'Scroll and each layer lifts away, scalp first.',num:`${totalCm} cm² inside the skull, counted pixel by pixel.`}]
+  .concat(LAYERS.map(L=>({lab:`Layer 0${L.order} / 05`, title:L.name, c:css(L.rgb), desc:L.desc, num:sentence(L.id)})));
+$('#pcard').innerHTML=cards.map((c,i)=>`<div class="${i?'off':''}"><div class="mono">${c.lab}</div><h3>${c.c?`<i style="background:${c.c}"></i>`:''}${c.title}</h3><p class="lede">${c.desc}</p><p class="num">${c.num}</p></div>`).join('');
+const cardEls=$$('#pcard>div');
+$('#pbar').innerHTML=LAYERS.map(L=>`<span style="--c:${css(L.rgb)}"></span>`).join('');
+const pbar=$$('#pbar span'); let curCard=0;
+
+/* ---------- numbers: measured composition ---------- */
+const inside=LAYERS.filter(L=>L.id!=='skull');
+$('#compBar').innerHTML=inside.map(L=>`<i style="width:${M[L.id].pct}%;background:${css(L.rgb)}" title="${L.name}"></i>`).join('');
+$('#compKey').innerHTML=inside.map(L=>`<span><i style="background:${css(L.rgb)}"></i>${L.name} <b>${pct(L.id)}%</b></span>`).join('')+`<span>Total <b>${totalCm} cm²</b> inside the skull</span>`;
+const compBar=$('#compBar');
+const counters=$$('[data-count]');
+
+/* ---------- guardrail visuals ---------- */
+const putImg=(id,src)=>$(id).insertAdjacentHTML('afterbegin',`<img alt="" src="${src}">`);
+putImg('#g1',IMG.lesionOnMri); putImg('#g2',IMG.mask); putImg('#g3',IMG.illus); putImg('#g4',IMG.mriDim);
+$('#g2t').textContent=`${M.lesion.px.toLocaleString()} px × ${(SP*SP).toFixed(3)} mm² = ${M.lesion.mm2.toFixed(0)} mm²`;
+
+/* ---------- scene engine ---------- */
+const scenes=$$('.sc');
+const LEN=[1.2,1.7,1.8,5,1.4,1.4,1];
+const T=.7, A=[]; {let a=0; LEN.forEach(l=>{A.push(a); a+=l;});}
+const END=A[A.length-1];
+const depthEls=scenes.map(s=>[...s.querySelectorAll('[data-d]')].map(el=>[el,+el.dataset.d]));
+const track=$('#track');
+let vh=innerHeight;
+function size(){ vh=innerHeight; track.style.height=(END*vh+vh)+'px'; }
+size(); addEventListener('resize',size);
+
+/* ---------- smooth scroll (wheel + keys eased toward a target) ---------- */
+let sTarget=scrollY, sCur=scrollY, sActive=false;
+const maxY=()=>Math.max(0,document.documentElement.scrollHeight-innerHeight);
+function innerScroller(el,dy){
+  for (;el&&el!==document.body&&el!==document.documentElement;el=el.parentElement){
+    if (el.scrollHeight>el.clientHeight+1 && /(auto|scroll)/.test(getComputedStyle(el).overflowY)){
+      if (dy>0 && el.scrollTop+el.clientHeight<el.scrollHeight-1) return true;
+      if (dy<0 && el.scrollTop>0) return true;
+    }
+  }
+  return false;
+}
+function smoothTo(y){
+  if (reduce){ scrollTo(0,y); return; }
+  if (!sActive) sCur=scrollY;
+  sTarget=clamp(y,0,maxY()); sActive=true;
+}
+addEventListener('wheel',e=>{
+  if (reduce||e.ctrlKey||innerScroller(e.target,e.deltaY)) return;
+  e.preventDefault();
+  const d=e.deltaY*(e.deltaMode===1?40:e.deltaMode===2?innerHeight:1);
+  smoothTo((sActive?sTarget:scrollY)+d);
+},{passive:false});
+addEventListener('keydown',e=>{
+  if (e.metaKey||e.ctrlKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+  const base=sActive?sTarget:scrollY, page=innerHeight*.9;
+  const m={ArrowDown:120,ArrowUp:-120,PageDown:page,PageUp:-page,' ':e.shiftKey?-page:page}[e.key];
+  if (m!=null){ e.preventDefault(); smoothTo(base+m); }
+  else if (e.key==='Home'){ e.preventDefault(); smoothTo(0); }
+  else if (e.key==='End'){ e.preventDefault(); smoothTo(maxY()); }
+});
+
+// scrubber
+const scrub=$('#scrub');
+scrub.innerHTML=scenes.map((s,i)=>`<button type="button" style="--w:${LEN[i]}" aria-label="Go to scene ${i+1}: ${s.dataset.name}"></button>`).join('');
+const scrubB=$$('#scrub button');
+scrubB.forEach((b,i)=>b.addEventListener('click',()=>go(i)));
+$$('[data-go]').forEach(b=>b.addEventListener('click',()=>go(+b.dataset.go)));
+function go(i,instant){
+  const y=A[i]*vh;
+  if (instant){ sActive=false; scrollTo(0,y); ps=A[i]-.75; } else smoothTo(y);
+}
+
+// skip button
+let skipEnd=false, skipLabel='Skip to the demo', scrT=0;
+const GLY='<>/\|=+*#01';
+function scramble(){
+  const target=skipLabel, el=$('#skipTx'); cancelAnimationFrame(scrT);
+  if (reduce){ el.textContent=target; return; }
+  const t0=performance.now(), dur=520, rev=[...target].map((_,i)=>i/target.length*dur*.8+Math.random()*90);
+  const tick=now=>{ const t=now-t0; let s='';
+    for (let i=0;i<target.length;i++){ const ch=target[i]; s+= ch===' '||t>=rev[i]?ch:GLY[(Math.random()*GLY.length)|0]; }
+    el.textContent=s; if(t<dur+100) scrT=requestAnimationFrame(tick); else el.textContent=target; };
+  scrT=requestAnimationFrame(tick);
+}
+const skip=$('#skip');
+const last=scenes.length-1;
+skip.addEventListener('pointerenter',scramble); skip.addEventListener('focus',scramble);
+skip.addEventListener('click',()=>{ if (ps>A[last]-T) go(0,true); else go(last,true); });
+addEventListener('keydown',e=>{ if((e.key==='s'||e.key==='S')&&!e.metaKey&&!e.ctrlKey&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName)) skip.click(); });
+
+// snap gently out of half-finished transitions
+let snapT;
+addEventListener('scroll',()=>{ clearTimeout(snapT); snapT=setTimeout(()=>{
+  if (sActive) return;
+  const p=scrollY/vh;
+  for (let i=0;i<last;i++){ const s=A[i]+LEN[i]-T, e=A[i]+LEN[i];
+    if (p>s+.02 && p<e-.02){ smoothTo(((p-s)<T/2?s:e)*vh); break; } }
+},180); },{passive:true});
+
+let ps=scrollY/vh, lastT=performance.now(), curScene=-1;
+function frame(now){
+  const dt=Math.min(64,now-lastT); lastT=now;
+  if (sActive){
+    sCur += (sTarget-sCur)*(1-Math.exp(-dt/110));
+    if (Math.abs(sTarget-sCur)<.5){ sCur=sTarget; sActive=false; }
+    scrollTo(0,sCur);
+  }
+  const pt=scrollY/vh;
+  ps += (pt-ps)*(reduce?1:1-Math.exp(-dt/70));
+  if (Math.abs(pt-ps)<.0005) ps=pt;
+  let active=0, best=-1;
+  scenes.forEach((s,i)=>{
+    const a=A[i], L=LEN[i];
+    const inn = i===0?1:clamp((ps-(a-T))/T);
+    const out = i===last?0:clamp((ps-(a+L-T))/T);
+    const u = clamp((ps-a)/Math.max(.001,L-T));
+    const vis=ease(inn)*(1-ease(out));
+    if (vis>best){best=vis; active=i;}
+    if (vis<=.002){ if(s.style.visibility!=='hidden'){s.style.visibility='hidden';} return; }
+    s.style.visibility='visible';
+    const ei=ease(inn), eo=ease(out);
+    s.style.opacity=vis.toFixed(3);
+    s.style.transform=`scale(${(1-(1-ei)*.07+eo*.09).toFixed(4)})`;
+    const bl=((1-ei)+eo)*7; s.style.filter=bl>.05&&!reduce?`blur(${bl.toFixed(2)}px)`:'none';
+    for (const [el,d] of depthEls[i]){ const y=((1-ei)*1-eo*1)*d*16; el.style.transform=`translate3d(0,${y.toFixed(2)}vh,0)`; }
+    hooks[i]&&hooks[i](u,inn,out);
+  });
+  scenes.forEach((s,i)=>s.classList.toggle('live',i===active));
+  if (active!==curScene){ curScene=active; $('#scNum').textContent=String(active+1).padStart(2,'0'); $('#scName').textContent='· '+scenes[active].dataset.name; if(active!==2) baManual=false; }
+  scrubB.forEach((b,i)=>b.style.setProperty('--f',clamp((ps-A[i])/LEN[i]).toFixed(3)));
+  const atEnd=ps>A[last]-T; if(atEnd!==skipEnd){ skipEnd=atEnd; skipLabel=atEnd?'Watch from the start':'Skip to the demo'; $('#skipAr').textContent=atEnd?'↺':'→'; scramble(); }
+  $('#hint').style.opacity = ps<.15?1:0;
+  drawBg(now);
+  requestAnimationFrame(frame);
+}
+
+let pickOn=null;
+const hooks={
+  0:(u,inn,out)=>{ tmx+=(mx-tmx)*.08; tmy+=(my-tmy)*.08;
+    stack.style.setProperty('--gap',(34+u*22+out*120)+'px');
+    stack.style.setProperty('--rx',(58-tmy*10-out*14)+'deg');
+    stack.style.setProperty('--rz',(-34+tmx*14+u*8+out*20)+'deg'); },
+  1:(u)=>{ const on=Math.round(clamp(u/.55)*NT); tiles.forEach((t,i)=>t.classList.toggle('on',i<on));
+    const pick=u>.68; if(pick!==pickOn){ pickOn=pick; sheet.classList.toggle('pick',pick); $('#sheetNote').textContent=pick?'CortexView works on SL 96':'Every 4th slice shown'; } },
+  2:(u)=>{ if(!baManual) setBA(+(92-84*ease(clamp(u*1.1))).toFixed(2)); },
+  3:(u)=>{
+    peelImgs.forEach(im=>{ const k=+im.dataset.o, off=ease(clamp(u*6-k));
+      im.style.opacity=(1-off).toFixed(3); im.style.transform=`translate3d(0,${(-off*14).toFixed(2)}%,0) scale(${(1+off*.22).toFixed(3)})`; im.style.filter=off>0&&off<1&&!reduce?`blur(${(off*5).toFixed(1)}px)`:'none'; });
+    const c=clamp(Math.floor(u*6),0,5);
+    if (c!==curCard){ cardEls[curCard].classList.add('off'); cardEls[c].classList.remove('off'); curCard=c; $('#peelTR').textContent=`${5-c} / 5 layers`; }
+    pbar.forEach((s,i)=>s.style.setProperty('--f',clamp(u*6-(i+1)).toFixed(3)));
+  },
+  4:(u,inn)=>{ const q=ease(clamp(inn*1.15));
+    compBar.style.setProperty('--f',q.toFixed(3));
+    counters.forEach(el=>{ const sfx=el.dataset.suffix; el.innerHTML=Math.round(+el.dataset.count*q)+(sfx?`<small>${sfx}</small>`:''); }); },
+};
+
+/* ---------- moving light, greyscale ---------- */
+const bgc=$('#bgc'), g=bgc.getContext('2d');
+const MOOD=[
+ [[.18,.2],[.86,.3],[.6,.92],[.1,.9]],
+ [[.5,.05],[.5,.98],[.05,.5],[.95,.5]],
+ [[.95,.15],[.75,.9],[.1,.15],[.3,.85]],
+ [[.12,.2],[.25,.85],[.9,.1],[.95,.85]],
+ [[.85,.12],[.15,.95],[.5,.5],[.95,.75]],
+ [[.05,.3],[.95,.7],[.4,.05],[.6,.95]],
+ [[.9,.1],[.08,.92],[.55,.98],[.95,.55]],
+];
+const SRC=[[255,255,255,.95],[150,150,152,.30],[255,255,255,.85],[120,120,122,.22]];
+function drawBg(now){
+  const W=bgc.width,Hh=bgc.height; g.clearRect(0,0,W,Hh);
+  let i=0; for(;i<last;i++) if(ps<A[i+1]) break;
+  const f=i<last?ease(clamp((ps-(A[i+1]-T))/T)):0, a=MOOD[i], b=MOOD[Math.min(last,i+1)];
+  const t=now/1000;
+  SRC.forEach(([r,gg,bb,al],k)=>{
+    const x=(a[k][0]+(b[k][0]-a[k][0])*f + .05*Math.sin(t*.21+k*1.7))*W;
+    const y=(a[k][1]+(b[k][1]-a[k][1])*f + .06*Math.cos(t*.17+k*2.3))*Hh;
+    const rad=(.42+.08*Math.sin(t*.3+k))*W;
+    g.save(); g.translate(x,y); g.rotate(t*.05+k); g.scale(1,.62);
+    const gr=g.createRadialGradient(0,0,0,0,0,rad); gr.addColorStop(0,`rgba(${r},${gg},${bb},${al})`); gr.addColorStop(1,`rgba(${r},${gg},${bb},0)`);
+    g.fillStyle=gr; g.fillRect(-rad,-rad,rad*2,rad*2); g.restore();
+  });
+}
+
+/* ---------- try it ---------- */
+const vLayers=$('#vLayers'), vPins=$('#vPins');
+$('#vMri').src=IMG.mriBlack;
+let mode='ill', pl=0, sel='lesion', painting=false;
+vLayers.innerHTML=LAYERS.map(L=>`<img data-id="${L.id}" alt="${L.name} layer">`).join('');
+vPins.innerHTML=LAYERS.map(L=>`<button class="pin" type="button" data-id="${L.id}" style="left:${M[L.id].anchor[0]}%;top:${M[L.id].anchor[1]}%" aria-label="${L.name} measurements"><i style="background:${css(L.rgb)}"></i></button>`).join('');
+function render(){
+  const ill=mode==='ill'&&!painting;
+  vLayers.querySelectorAll('img').forEach(im=>{ const L=byId(im.dataset.id), want=ill?IMG.layer[L.id]:IMG.flatLayer[L.id];
+    if (im.getAttribute('src')!==want) im.src=want; im.classList.toggle('off',mode==='raw'||L.order<=pl); });
+  vPins.querySelectorAll('.pin').forEach(p=>{ const L=byId(p.dataset.id); p.classList.toggle('off',mode==='raw'||L.order<=pl); p.classList.toggle('sel',p.dataset.id===sel); });
+  $('#peelVal').textContent = pl===0?'All layers':pl===5?'Raw scan':`${LAYERS.find(l=>l.order===pl).name} off`;
+  $('#vTR').textContent = mode==='raw'?'MRI':painting?'Flat · pending':mode==='flat'?'Flat':'Illustration';
+  const L=byId(sel), m=M[sel];
+  $('#card').innerHTML=`<div class="hd"><i style="background:${css(L.rgb)}"></i>${L.name}</div>
+  <dl><dt>Area</dt><dd>${m.mm2.toFixed(0)} mm²</dd>${m.pct!=null?`<dt>Share inside skull</dt><dd>${m.pct.toFixed(1)}%</dd>`:''}<dt>Separate pieces</dt><dd>${m.comps}</dd>${m.diam?`<dt>Longest span</dt><dd>${m.diam.toFixed(1)} mm</dd><dt>Side</dt><dd>${m.hemi}</dd>`:''}<dt>Source</dt><dd>mask pixels</dd></dl>`;
+}
+$('#peelR').addEventListener('input',e=>{pl=+e.target.value; render();});
+vPins.addEventListener('click',e=>{const b=e.target.closest('.pin'); if(b){sel=b.dataset.id; render();}});
+const segB=$$('.seg button');
+segB.forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.m; segB.forEach(x=>x.setAttribute('aria-pressed',x===b)); render();}));
+const pipe=$$('#pipe li'), badge=$('#vBadge'); let runId=0;
+function run(name){
+  const id=++runId; pipe.forEach(li=>li.className='');
+  $('#note').firstChild.textContent = name ? `Got ${name}. The live backend isn't connected in this preview, so the synthetic scan runs instead. ` : 'Running the built-in synthetic scan. ';
+  const times=[350,550,250,2600], labs=['0.2 s','0.5 s','0.1 s','9.8 s'];
+  painting=true; mode='ill'; segB.forEach(x=>x.setAttribute('aria-pressed',x.dataset.m==='ill'));
+  vLayers.querySelectorAll('img').forEach(im=>im.classList.add('off')); vPins.querySelectorAll('.pin').forEach(p=>p.classList.add('off'));
+  let i=0;
+  const step=()=>{ if(id!==runId) return;
+    if (i>0){ pipe[i-1].className='ok'; pipe[i-1].querySelector('.tm').textContent=labs[i-1]; }
+    if (i===3){ render(); badge.hidden=false; }
+    if (i===4){ painting=false; badge.hidden=true; render(); return; }
+    pipe[i].className='run'; pipe[i].querySelector('.tm').textContent='…';
+    setTimeout(step,times[i++]);
+  };
+  step();
+}
+$('#rerun').addEventListener('click',()=>run());
+const file=$('#file'), drop=$('#drop');
+file.addEventListener('change',()=>{ if(file.files.length) run(file.files.length===1?`“${file.files[0].name}”`:`${file.files.length} files`); file.value=''; });
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault(); drop.classList.add('over');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault(); drop.classList.remove('over');}));
+drop.addEventListener('drop',e=>{const f=e.dataTransfer.files; if(f.length) run(f.length===1?`“${f[0].name}”`:`${f.length} files`);});
+render();
+
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body></html>

@@ -1,0 +1,24 @@
+SynthSeg-robust 2.0
+using CPU, hiding all CUDA_VISIBLE_DEVICES
+using 6 threads
+predicting 1/1
+
+1/1 [==============================] - ETA: 0s
+1/1 [==============================] - 79s 79s/step
+
+segmentation  saved in:    C:\Users\simpl\remind_work\derivatives\synthseg\ReMIND-045\synthseg_1mm.nii.gz
+volumes saved in:          C:\Users\simpl\remind_work\derivatives\synthseg\ReMIND-045\volumes.csv
+QC scores saved in:        C:\Users\simpl\remind_work\derivatives\synthseg\ReMIND-045\qc.csv
+
+If you use this tool in a publication, please cite:
+SynthSeg: Segmentation of brain MRI scans of any contrast and resolution without retraining
+B. Billot, D.N. Greve, O. Puonti, A. Thielscher, K. Van Leemput, B. Fischl, A.V. Dalca, J.E. Iglesias
+Medical Image Analysis, accepted for publication.
+
+Robust machine learning segmentation for large-scale analysis of heterogeneous clinical brain MRI datasets
+B. Billot, C. Magdamo, Y. Cheng, S.E. Arnold, S. Das, J.E. Iglesias
+PNAS, accepted for publication.
+WARNING:tensorflow:From C:\Users\simpl\remind_work\venv\Lib\site-packages\keras\src\losses.py:2976: The name tf.losses.sparse_softmax_cross_entropy is deprecated. Please use tf.compat.v1.losses.sparse_softmax_cross_entropy instead.
+
+C:/Users/simpl/remind_work/fs/freesurfer\python\scripts\mri_synthseg:2183: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+  ras_axes_flo[swapped_axis_idx], ras_axes_flo[i] = ras_axes_flo[i], ras_axes_flo[swapped_axis_idx]

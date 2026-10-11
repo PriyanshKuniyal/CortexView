@@ -1,0 +1,22 @@
+SynthSeg-robust 2.0
+using CPU, hiding all CUDA_VISIBLE_DEVICES
+using 6 threads
+predicting 1/1
+
+1/1 [==============================] - ETA: 0s
+1/1 [==============================] - 110s 110s/step
+
+segmentation  saved in:    C:\Users\simpl\remind_work\derivatives\synthseg\ReMIND-089\synthseg_1mm.nii.gz
+volumes saved in:          C:\Users\simpl\remind_work\derivatives\synthseg\ReMIND-089\volumes.csv
+QC scores saved in:        C:\Users\simpl\remind_work\derivatives\synthseg\ReMIND-089\qc.csv
+
+If you use this tool in a publication, please cite:
+SynthSeg: Segmentation of brain MRI scans of any contrast and resolution without retraining
+B. Billot, D.N. Greve, O. Puonti, A. Thielscher, K. Van Leemput, B. Fischl, A.V. Dalca, J.E. Iglesias
+Medical Image Analysis, accepted for publication.
+
+Robust machine learning segmentation for large-scale analysis of heterogeneous clinical brain MRI datasets
+B. Billot, C. Magdamo, Y. Cheng, S.E. Arnold, S. Das, J.E. Iglesias
+PNAS, accepted for publication.
+WARNING:tensorflow:From C:\Users\simpl\remind_work\venv\Lib\site-packages\keras\src\losses.py:2976: The name tf.losses.sparse_softmax_cross_entropy is deprecated. Please use tf.compat.v1.losses.sparse_softmax_cross_entropy instead.
+

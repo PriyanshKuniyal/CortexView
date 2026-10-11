@@ -1,0 +1,9 @@
+# CortexView backend: classical segmentation (no deep learning)
+# Setup (from repo root):
+#   python -m venv backend/.venv
+#   backend/.venv/Scripts/python.exe -m pip install -r backend/requirements.txt
+numpy==2.5.3
+scipy==1.18.1
+scikit-image==0.26.0
+pydicom==3.0.2
+Pillow==12.3.0
