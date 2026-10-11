@@ -1,6 +1,6 @@
 /**
- * API types, hand-mirrored from docs/contracts.md (C3 API, C4 metrics, DRAFT v0).
- * There is no backend or OpenAPI schema in the repo yet; regenerate these from OpenAPI once there is.
+ * API types, hand-mirrored from shared/contracts.py (C3 API, C4 metrics; docs/contracts.md).
+ * The backend serves the same schema at /api/openapi.json. Change both together.
  */
 import type { LayerId } from '../layers'
 

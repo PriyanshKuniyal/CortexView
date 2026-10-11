@@ -4,7 +4,7 @@ These are the agreements between the pieces of CortexView: backend, segmentation
 Once frozen, changing one needs everyone's OK (TASKS §2).
 
 - **Source of truth in code:** Pydantic models in `shared/contracts.py`, mirrored by hand in `frontend/src/cortexview/api/types.ts`.
-  So far only C4 is in `contracts.py`; the rest are written after this draft is approved.
+  C3 (API) and C4 (metrics) are in `contracts.py`. The server is `backend/api/app.py`; it serves the same schema at `/api/openapi.json`.
 - **Layers and colors:** `shared/layers.json`, read by both Python and TS.
 - Items marked **[DECIDE]** are still open.
 
@@ -99,7 +99,7 @@ frontend                                   backend
 
 | Field | Required | Meaning |
 |---|---|---|
-| `files` | yes, 1..n | `.dcm` files and/or one `.zip`. May mix MR images and doctor SEG files. Total cap: **[DECIDE] 300 MB**. |
+| `files` | yes, 1..n | `.dcm` files and/or one `.zip`. May mix MR images and doctor SEG files. No size cap for the demo (`MAX_UPLOAD_MB` brings one back). |
 | `slice_index` | no | Which slice to show; the default is auto (below). |
 | `series_uid` | no | Force a particular MR series; the default is auto. |
 
@@ -168,7 +168,7 @@ frontend                                   backend
 | `200` | `{ "status": "failed", "reason": "timeout" }`. The frontend keeps the flat layers. |
 | `404` | Unknown or expired job. |
 
-`backend` is one of `local-lora-v1` | `workers-klein-4b` | `workers-klein-9b` | `flat-fallback` | `cache`.
+`backend` is one of `local-lora-v1` | `workers-klein-4b` | `workers-klein-9b` | `workers-flux2-dev` | `flat-fallback` | `cache`.
 
 ### Errors (any 4xx/5xx)
 ```json
@@ -254,6 +254,9 @@ The signature is unchanged from finetune-brief §10. The changes:
 - There's a new backend name, `cache`.
 - The backend calls it in the background after `/api/analyze` returns.
 - Then the backend cuts the illustration into per-layer RGBA PNGs using the masks, so AI output never shows outside a mask.
+- Code: `backend/renderer/` (render chain + `fidelity.py`). FT's LoRA server plugs in as the `local` backend (`LOCAL_RENDER_URL`,
+  `POST /render`, header `X-CortexView-Key`); Workers AI and the flat fallback need nothing from FT. Config: `backend/.env.example`.
+- Fidelity gate: `mean_iou >= 0.40` (demo setting; raise it after fine-tuning) and `phantom_lesion_pct < 0.5`; up to 3 seeds per AI backend, everything stops at 45 s.
 
 ---
 
@@ -317,6 +320,6 @@ The AI segmenter works on the whole 3D series on the GPU, which takes roughly 10
 ---
 
 ## Open decisions
-1. SIZE_CAP = 300 mb
+1. Upload size cap: removed for the demo.
 4.  This draft assumes no text files only. this wud be intorduced in next parts
 5. ~~AI segmenter timing and how `segment()` gets the volume (C6).~~ Decided 2026-10-10: 1 s relaxed for AI mode; volume in, label volume out (see C6).

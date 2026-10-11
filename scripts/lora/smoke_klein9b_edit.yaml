@@ -1,0 +1,66 @@
+---
+# SMOKE TEST ONLY: proves the model loads, the paired dataset is read, a few steps train, and a checkpoint
+# and a sample get written. ~10 steps; the result is thrown away.
+#
+# Its dataset is identity pairs (guide -> same guide) from 4 TRAIN-patient guides, built through the real
+# build_dataset.py so that script is exercised too (see docs/lora-lightning.md, "Smoke test").
+#
+#   cd ~/ai-toolkit && python run.py /teamspace/studios/this_studio/Plie/scripts/lora/smoke_klein9b_edit.yaml
+job: extension
+config:
+  name: "cortexview_klein9b_smoke"
+  process:
+    - type: 'sd_trainer'
+      training_folder: "/teamspace/studios/this_studio/cortexview_lora/smoke_output"
+      device: cuda:0
+      network:
+        type: "lora"
+        linear: 32
+        linear_alpha: 32
+      save:
+        dtype: float16
+        save_every: 10
+        max_step_saves_to_keep: 1
+        push_to_hub: false
+      datasets:
+        - folder_path: "/teamspace/studios/this_studio/cortexview_lora/smoke_dataset/target"
+          control_path: "/teamspace/studios/this_studio/cortexview_lora/smoke_dataset/reference"
+          caption_ext: "txt"
+          caption_dropout_rate: 0.05
+          shuffle_tokens: false
+          cache_latents_to_disk: true
+          resolution: [ 768 ]               # same as the full run, so VRAM use is representative
+      train:
+        batch_size: 1
+        steps: 10
+        gradient_accumulation_steps: 1
+        train_unet: true
+        train_text_encoder: false
+        gradient_checkpointing: true
+        noise_scheduler: "flowmatch"
+        optimizer: "adamw8bit"
+        lr: 1e-4
+        timestep_type: "weighted"
+        dtype: bf16
+        skip_first_sample: true
+      model:
+        name_or_path: "/teamspace/studios/this_studio/flux2-klein-base-9b"
+        arch: "flux2_klein_9b"
+        quantize: true
+        quantize_te: true
+      sample:
+        sampler: "flowmatch"
+        sample_every: 10
+        sample_start_step: 0
+        width: 768
+        height: 768
+        prompts:
+          - "turn this brain segmentation map into a CRTXV1EW illustration  --ctrl_img /teamspace/studios/this_studio/Plie/data/guides/remind/guide/ReMIND-013_s079.png"
+        neg: ""
+        seed: 42
+        walk_seed: false
+        guidance_scale: 4
+        sample_steps: 20
+meta:
+  name: "[name]"
+  version: '1.0'

@@ -2,7 +2,6 @@
 
     files -> scan headers -> choose series (C3 rule) -> load pixels -> doctor labels (same frame only)
           -> [lesion from a FLAIR in the same frame, if no doctor lesion] -> segment (3D)
-             (classical or AI: CORTEXVIEW_SEGMENTER = classical | ai, contract C6)
           -> pick slice (C3 rule or the caller's) -> Result
 
 This is what POST /api/analyze calls. It is stateless, does no logging, and never puts header values or
@@ -27,8 +26,8 @@ MIN_3D_SLICES = 20       # fewer slices than this: segment the chosen slice on i
 
 
 def _segmenter():
-    """(analyze function, True if it's the AI one). The AI segmenter falls back to classical by itself."""
-    if os.environ.get("CORTEXVIEW_SEGMENTER", "classical").strip().lower() == "ai":
+    """Choose the primary AI segmenter unless classical mode was explicitly requested."""
+    if os.environ.get("CORTEXVIEW_SEGMENTER", "ai").strip().lower() != "classical":
         from .segment_ai import T1, analyze as ai, available
         return ai, available()[0], T1
     return analyze, False, set()
@@ -116,7 +115,7 @@ def run(sources, slice_index: int | None = None, series_uid: str | None = None,
     seg_fn, ai_ready, ai_sequences = _segmenter()
     ai_runs = ai_ready and vol.sequence in ai_sequences and vol.shape[0] >= MIN_3D_SLICES
     hint = None
-    if "lesion" not in doctor and vol.sequence != "FLAIR" and not ai_runs:   # the AI finds lesions on T1 itself
+    if "lesion" not in doctor and vol.sequence != "FLAIR" and not ai_runs:
         hint = _lesion_from_flair(series, info, vol, params)
 
     if vol.shape[0] < MIN_3D_SLICES:

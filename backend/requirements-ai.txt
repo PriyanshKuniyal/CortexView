@@ -1,0 +1,5 @@
+# GPU inference dependencies for the primary CortexView nnU-Net segmenter.
+# Install this after backend/requirements.txt in an NVIDIA CUDA 12.8 environment.
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch==2.11.0+cu128
+nnunetv2==2.8.1
