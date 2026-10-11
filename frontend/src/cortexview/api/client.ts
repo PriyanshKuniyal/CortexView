@@ -1,5 +1,10 @@
 import type { AnalyzeResponse, ApiErrorBody, RenderResponse } from './types'
 
+// Empty in local development: Vite proxies relative /api calls. In a Vercel
+// build, set this to the HTTPS URL of the laptop's tunnel (no trailing slash).
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
+const apiUrl = (path: string) => (path.startsWith('http://') || path.startsWith('https://') ? path : `${API_BASE_URL}${path}`)
+
 /** An API failure with a message that's safe to show to the user as-is. */
 export class ApiError extends Error {
   code: string
@@ -46,7 +51,7 @@ export function analyze(files: File[], signal?: AbortSignal, onUpload?: (fractio
   return new Promise((resolve, reject) => {
     if (signal?.aborted) return reject(aborted())
     const xhr = new XMLHttpRequest()
-    xhr.open('POST', '/api/analyze')
+    xhr.open('POST', apiUrl('/api/analyze'))
     xhr.upload.onprogress = (e) => e.lengthComputable && onUpload?.(e.loaded / e.total)
     xhr.upload.onload = () => onUpload?.(1)
     xhr.onload = () => {
@@ -70,7 +75,7 @@ export function analyze(files: File[], signal?: AbortSignal, onUpload?: (fractio
 export async function fetchRender(url: string, signal?: AbortSignal): Promise<RenderResponse> {
   let res: Response
   try {
-    res = await fetch(url, { signal })
+    res = await fetch(apiUrl(url), { signal })
   } catch (e) {
     if (e instanceof DOMException && e.name === 'AbortError') throw e
     throw new ApiError('network', "Couldn't reach the analysis server.", 0)

@@ -11,6 +11,7 @@ that consume Result.
 from __future__ import annotations
 
 import io as _io
+import os
 import zipfile
 from dataclasses import dataclass, field
 
@@ -22,6 +23,14 @@ from .segment import Params, Segmentation, analyze
 from .volume import Volume, resample_nearest
 
 MIN_3D_SLICES = 20       # fewer slices than this: segment the chosen slice on its own (2D)
+
+
+def _segmenter():
+    """Choose the primary AI segmenter unless classical mode was explicitly requested."""
+    if os.environ.get("CORTEXVIEW_SEGMENTER", "ai").strip().lower() != "classical":
+        from .segment_ai import T1, analyze as ai, available
+        return ai, available()[0], T1
+    return analyze, False, set()
 
 
 class AnalyzeError(Exception):
@@ -103,8 +112,10 @@ def run(sources, slice_index: int | None = None, series_uid: str | None = None,
     if slice_index is not None and not 0 <= slice_index < vol.shape[0]:
         raise AnalyzeError("bad_slice_index", 422, f"slice_index must be between 0 and {vol.shape[0] - 1}.")
 
+    seg_fn, ai_ready, ai_sequences = _segmenter()
+    ai_runs = ai_ready and vol.sequence in ai_sequences and vol.shape[0] >= MIN_3D_SLICES
     hint = None
-    if "lesion" not in doctor and vol.sequence != "FLAIR":
+    if "lesion" not in doctor and vol.sequence != "FLAIR" and not ai_runs:
         hint = _lesion_from_flair(series, info, vol, params)
 
     if vol.shape[0] < MIN_3D_SLICES:
@@ -112,12 +123,12 @@ def run(sources, slice_index: int | None = None, series_uid: str | None = None,
         k = vol.shape[0] // 2 if slice_index is None else slice_index
         if slice_index is None and "lesion" in doctor and doctor["lesion"].any():
             k = int(np.argmax(doctor["lesion"].reshape(vol.shape[0], -1).sum(1)))
-        seg2d = analyze(vol.data[k], vol.spacing[1:], vol.sequence,
+        seg2d = seg_fn(vol.data[k], vol.spacing[1:], vol.sequence,
                         {r: m[k] for r, m in doctor.items()}, params,
                         lesion_hint=None if hint is None else hint[k])
         return Result(vol, seg2d, seg2d, k, sorted(set(warnings + seg2d.warnings)))
 
-    seg = analyze(vol.data, vol.spacing, vol.sequence, doctor, params,
+    seg = seg_fn(vol.data, vol.spacing, vol.sequence, doctor, params,
                   tissue_slices="auto" if slice_index is None else slice_index, lesion_hint=hint)
     k = seg.slice_index if slice_index is None else slice_index
     internal = {"tissue_partial"}                 # only the shown slice needs CSF/GM/WM: not news to a user
