@@ -1,4 +1,3 @@
-import { USE_MOCK } from '../config'
 import type { AnalyzeResponse, ApiErrorBody, RenderResponse } from './types'
 
 /** An API failure with a message that's safe to show to the user as-is. */
@@ -50,7 +49,6 @@ async function request(url: string, init: RequestInit): Promise<Response> {
 
 /** POST /api/analyze: upload the files, get layers and metrics back (contract C3). */
 export async function analyze(files: File[], signal?: AbortSignal): Promise<AnalyzeResponse> {
-  if (USE_MOCK) return (await import('./mock')).mockAnalyze(files, signal)
   const form = new FormData()
   for (const f of files) form.append('files', f)
   const res = await request('/api/analyze', { method: 'POST', body: form, signal })
@@ -59,7 +57,6 @@ export async function analyze(files: File[], signal?: AbortSignal): Promise<Anal
 
 /** GET /api/render/{job_id}: poll for the illustration (contract C3). */
 export async function fetchRender(url: string, signal?: AbortSignal): Promise<RenderResponse> {
-  if (USE_MOCK) return (await import('./mock')).mockRender(url, signal)
   const res = await request(url, { signal })
   return res.json()
 }

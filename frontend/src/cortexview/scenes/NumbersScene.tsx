@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { LAYERS, N_LAYERS, css } from '../layers'
 import type { DemoData } from '../demo/types'
 import { clamp, ease, type Film } from '../film/useScrollFilm'
-import { MAX_UPLOAD_MB } from '../config'
+import { RENDER_TIMEOUT_MS } from '../config'
 
 /**
  * Counted-up figures. Sources:
@@ -10,7 +10,7 @@ import { MAX_UPLOAD_MB } from '../config'
  * - 3929 slices: data/archive/kaggle_3m holds 3929 image/mask pairs.
  * - 663 series / 10.9 GB: from the prototype; not verifiable from the repo (the download manifest isn't checked in).
  * - 9B, FLUX non-commercial license: FLUX.2 klein base-9B.
- * - 300 MB / 5 min: contract C3.
+ * - 60 s / 5 min: contract C3 (render polling limit, render result lifetime).
  */
 const FIGURES: { count: number; suffix?: string; d: string }[] = [
   { count: 0, d: 'numbers written by AI' },
@@ -19,7 +19,7 @@ const FIGURES: { count: number; suffix?: string; d: string }[] = [
   { count: 3929, d: 'extra slices with checked lesion masks' },
   { count: 9, suffix: 'B', d: 'parameters, FLUX.2 klein base · FLUX non-commercial license' },
   { count: N_LAYERS, suffix: 'layers', d: 'tissue layers, scalp to lesion' },
-  { count: MAX_UPLOAD_MB, suffix: 'MB', d: 'largest upload' },
+  { count: RENDER_TIMEOUT_MS / 1000, suffix: 's', d: 'longest wait for the illustration' },
   { count: 5, suffix: 'min', d: 'max time in memory. Nothing hits disk' },
 ]
 

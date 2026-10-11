@@ -22,3 +22,6 @@ data/out/
 *.safetensors
 *.ckpt
 output/
+
+# Render cache (illustrations of demo cases)
+data/render_cache/

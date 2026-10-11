@@ -4,8 +4,7 @@ The main page is **CortexView** (`src/cortexview/`), a React port of `docs/desig
 a 7-scene scroll film, with scene 7 ("Try it") wired to `POST /api/analyze` and `GET /api/render/{id}`
 (contract C3/C4 in `docs/contracts.md`; types in `src/cortexview/api/types.ts`). Layers come from `shared/layers.json`.
 
-- `VITE_USE_MOCK=true` answers "Try it" with an in-browser mock server (built-in phantom). File-name test hooks:
-  a non-`.dcm`/`.zip` file returns `not_dicom`; a name containing `render-fail` makes the render fail.
+- "Try it" always talks to the real backend (`backend/api/app.py`). Start it before `npm run dev`.
 - `DEMO_SOURCE` in `src/cortexview/config.ts` picks the film's demo slice: `'synthetic'` (phantom, default)
   or `'remind'` (a bundle in `public/demo/`, format documented in `src/cortexview/demo/remind.ts`).
 
@@ -13,15 +12,20 @@ The earlier chat UI (React + TypeScript + Vite + Tailwind CSS v4) is still avail
 
 ## Run
 
+    # backend, from the repo root (first time: see backend/requirements.txt)
+    backend/.venv/Scripts/python.exe -m uvicorn api.app:app --app-dir backend --port 8000
+
+    # frontend
     npm install
-    cp .env.example .env.local   # VITE_USE_MOCK=true works without a backend
-    npm run dev                  # http://localhost:5173
+    cp .env.example .env.local
+    npm run dev                  # http://localhost:5173, /api proxied to the backend
 
 ## Backend contract
 
 The dev server proxies `/api/*` to `VITE_API_TARGET` (default `http://localhost:8000`).
-The UI calls `POST /api/chat` with `{ "messages": [{ "role": "user" | "assistant", "content": "..." }] }`
-and expects the reply streamed back as plain text. See `src/lib/api.ts`.
+"Try it" calls `POST /api/analyze` and polls `GET /api/render/{job_id}` (contract C3, `docs/contracts.md`;
+schema at `http://localhost:8000/api/docs`). The old chat UI at `/#chat` calls `POST /api/chat`, which the
+backend doesn't implement.
 
 ## Structure
 
