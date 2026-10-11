@@ -1,1 +1,1 @@
-"""CortexView backend: DICOM loading and classical (non-AI) brain MRI segmentation."""
+"""CortexView backend: DICOM loading with AI-first segmentation and classical fallback."""

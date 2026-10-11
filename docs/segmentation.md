@@ -1,7 +1,13 @@
-# CortexView classical segmentation
+# CortexView segmentation
 
-The segmenter turns a brain MRI into the five C1 layers: `skull`, `gray_matter`, `white_matter`, `csf` and `lesion`.
-- **No AI is involved.** Every step is plain math: thresholds, distance maps, connected blobs and robust statistics.
+The primary segmenter is a 3D **nnU-Net** model that turns a T1/T1-post brain MRI volume into the five C1 layers: `skull`, `gray_matter`, `white_matter`, `csf` and `lesion`. Its inference folder is configured by `CORTEXVIEW_AI_WEIGHTS` and defaults to `C:\Users\Priyansh Kuniyal\Plie-seg-ai\ml\weights\cortexview_nnunet`.
+
+- **AI is the default.** `CORTEXVIEW_SEGMENTER=ai` is the default selection in the backend pipeline.
+- **Classical segmentation remains the safe fallback.** It is used for non-T1 scans, 2D/short series, or when CUDA, PyTorch, nnU-Net, or weights are unavailable; the response includes `segmenter_fallback`.
+- **An explicit classical override remains available:** set `CORTEXVIEW_SEGMENTER=classical`.
+- **The AI model runs in deterministic FP32 CUDA inference** and preserves the existing masks, metrics, renderer, and API contracts.
+
+The rest of this document describes the classical fallback, which uses plain math: thresholds, distance maps, connected blobs and robust statistics.
 - **It's deterministic.** The same input always gives byte-identical masks; the tests check this.
 - **It works in 3D on the whole series,** then cuts out the slice that is shown.
 - **Sizes are in mm,** so thick-slice scans (e.g. 5 mm gaps) are handled correctly.
@@ -190,6 +196,7 @@ All values are Dice.
 ```
 python -m venv backend/.venv
 backend/.venv/Scripts/python.exe -m pip install -r backend/requirements.txt
+backend/.venv/Scripts/python.exe -m pip install -r backend/requirements-ai.txt  # NVIDIA CUDA 12.8 runtime
 cd tests && ../backend/.venv/Scripts/python.exe -m unittest            # 49 tests, ~2.5 min
 backend/.venv/Scripts/python.exe -I scripts/seg/run_on_remind.py --patients 1-45 --sequence T1   # T1 | T2 | FLAIR
 backend/.venv/Scripts/python.exe -I scripts/seg/eval_kaggle.py

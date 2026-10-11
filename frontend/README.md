@@ -27,6 +27,13 @@ The dev server proxies `/api/*` to `VITE_API_TARGET` (default `http://localhost:
 schema at `http://localhost:8000/api/docs`). The old chat UI at `/#chat` calls `POST /api/chat`, which the
 backend doesn't implement.
 
+## Vercel frontend + laptop backend
+
+Vite's development proxy does not exist after a Vercel deployment. Expose the laptop's FastAPI server through a
+stable HTTPS tunnel, configure `VITE_API_BASE_URL` in Vercel to that public URL, and redeploy. The browser then sends
+uploads directly to the tunnel, avoiding Vercel proxy body-size limits. Add the exact Vercel origin to the laptop
+backend's `CORS_ORIGINS`, for example `CORS_ORIGINS=https://your-project.vercel.app`.
+
 ## Structure
 
     src/

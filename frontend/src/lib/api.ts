@@ -1,6 +1,7 @@
 import type { Message } from '@/types/chat'
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
 
 /**
  * Streams the assistant reply for a conversation.
@@ -15,7 +16,7 @@ export async function streamChat(
 ): Promise<void> {
   if (USE_MOCK) return mockStream(messages, onChunk, signal)
 
-  const res = await fetch('/api/chat', {
+  const res = await fetch(`${API_BASE_URL}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ messages }),

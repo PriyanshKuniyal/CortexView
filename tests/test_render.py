@@ -1,5 +1,6 @@
 """Contract C5 render chain and fidelity gate, without any network."""
 import unittest
+import base64
 from pathlib import Path
 from unittest import mock
 
@@ -86,6 +87,33 @@ class TestChain(unittest.TestCase):
         with mock.patch.object(renderer, "_call_local", side_effect=renderer._Skip()) as call:
             r = renderer.render(guide_rgb(label_map(m)), m, cfg=self.cfg())
         self.assertEqual((r.backend, call.call_count), ("flat-fallback", 1))
+
+    def test_workers_rotate_tokens_then_use_fallback(self):
+        m = toy_masks()
+        g = guide_rgb(label_map(m))
+        cfg = renderer.Config(backends=["workers", "flat"], cf_account="original-account", cf_token="original-token",
+                              cf_accounts=("account-one", "account-two"),
+                              cf_tokens=("bad-token", "good-token"), cf_backend="workers-klein-4b")
+        response = ('{"success": true, "result": {"image": "' + base64.b64encode(renderer._png(g)).decode() + '"}}').encode()
+        with mock.patch.object(renderer, "_post", side_effect=[renderer._Skip(), response]) as post:
+            result = renderer.render(g, m, cfg=cfg)
+        self.assertEqual(result.backend, "workers-klein-4b")
+        self.assertEqual(post.call_count, 2)
+        self.assertIn("/accounts/original-account/", post.call_args_list[0].args[0])
+        self.assertIn("/accounts/account-one/", post.call_args_list[1].args[0])
+        self.assertEqual(post.call_args_list[0].args[2]["Authorization"], "Bearer original-token")
+        self.assertEqual(post.call_args_list[1].args[2]["Authorization"], "Bearer bad-token")
+
+    def test_legacy_pair_precedes_extra_rotating_pairs(self):
+        cfg = renderer.Config(cf_account="first-account", cf_token="first-token",
+                              cf_accounts=("second-account",), cf_tokens=("second-token",))
+        self.assertEqual(cfg.worker_credentials,
+                         (("first-account", "first-token"), ("second-account", "second-token")))
+
+    def test_mismatched_rotating_lists_disable_workers(self):
+        cfg = renderer.Config(backends=["workers", "flat"], cf_accounts=("account-one", "account-two"),
+                              cf_tokens=("only-one-token",))
+        self.assertNotIn("workers", cfg.available())
 
     def test_cut_layers_stay_inside_masks(self):
         m = toy_masks()

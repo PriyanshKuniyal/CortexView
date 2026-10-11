@@ -6,6 +6,7 @@ WARNINGS = {
     "seg_segment_ignored": "A doctor's outline had a structure CortexView doesn't show, so that part was ignored.",
     "seg_decode_suspect": "A doctor's outline couldn't be read reliably, so it wasn't used.",
     "low_slice_count": "Only a few slices were uploaded, so this slice was analyzed on its own and volumes aren't available.",
+    "segmenter_fallback": "The AI segmenter could not be used for this scan, so CortexView used its classical fallback.",
     "nonuniform_slices": "The slices aren't evenly spaced, so 3D measurements may be less accurate.",
     "sequence_unknown": "The scan type (T1, T2 or FLAIR) couldn't be recognised, so a default was assumed.",
     "noisy_background": "The image is noisy, so the automatic layers are less reliable.",

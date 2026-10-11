@@ -74,7 +74,9 @@ class Config:
     local_url: str = ""
     local_key: str = ""
     cf_account: str = ""
+    cf_accounts: tuple[str, ...] = ()
     cf_token: str = ""
+    cf_tokens: tuple[str, ...] = ()
     cf_backend: str = "workers-klein-4b"
     steps: int = 20
     cache_dir: Path = ROOT / "data" / "render_cache"
@@ -82,6 +84,9 @@ class Config:
 
     @classmethod
     def from_env(cls) -> "Config":
+        # Rotating credentials are positional pairs: account N uses token N.
+        account_pool = tuple(account.strip() for account in _env("CF_ACCOUNT_IDS").split(",") if account.strip())
+        token_pool = tuple(token.strip() for token in _env("CF_API_TOKENS").split(",") if token.strip())
         return cls(
             backends=[b.strip() for b in _env("RENDER_BACKENDS", "cache,local,workers,flat").split(",") if b.strip()],
             attempts=int(_env("RENDER_ATTEMPTS", "3")),
@@ -91,17 +96,35 @@ class Config:
             local_url=_env("LOCAL_RENDER_URL").rstrip("/"),
             local_key=_env("LOCAL_RENDER_KEY"),
             cf_account=_env("CF_ACCOUNT_ID"),
+            cf_accounts=account_pool,
             cf_token=_env("CF_API_TOKEN"),
+            cf_tokens=token_pool,
             cf_backend=_env("CF_MODEL", "workers-klein-4b"),
             steps=int(_env("RENDER_STEPS", "20")),
             cache_dir=Path(_env("RENDER_CACHE_DIR") or ROOT / "data" / "render_cache"),
             cache_record=_env("RENDER_CACHE_RECORD", "0") == "1",
         )
 
+    @property
+    def worker_credentials(self) -> tuple[tuple[str, str], ...]:
+        """Ordered ``(account_id, token)`` pairs, beginning with the legacy pair.
+
+        Existing CF_ACCOUNT_ID + CF_API_TOKEN values stay first. Additional
+        pairs come from the aligned CF_ACCOUNT_IDS + CF_API_TOKENS lists.
+        Their lengths must match so a token can never be sent to the wrong
+        account.
+        """
+        if self.cf_accounts:
+            if len(self.cf_accounts) != len(self.cf_tokens):
+                return ()
+            first = ((self.cf_account, self.cf_token),) if self.cf_account and self.cf_token else ()
+            return first + tuple(zip(self.cf_accounts, self.cf_tokens))
+        return ((self.cf_account, self.cf_token),) if self.cf_account and self.cf_token else ()
+
     def available(self) -> list[str]:
         ok = {"cache": self.cache_dir.is_dir() or self.cache_record,
               "local": bool(self.local_url),
-              "workers": bool(self.cf_account and self.cf_token),
+              "workers": bool(self.worker_credentials),
               "flat": True}
         return [b for b in self.backends if ok.get(b)]
 
@@ -235,8 +258,8 @@ def _post(url: str, fields: dict, headers: dict, timeout: float) -> bytes:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return r.read()
     except urllib.error.HTTPError as e:
-        if e.code in (400, 401, 403, 404):
-            raise _Skip() from None        # bad request, wrong key or URL: another seed won't help
+        if e.code in (400, 401, 403, 404, 429):
+            raise _Skip() from None        # bad request, wrong key/URL or quota used up: another seed won't help
         raise
     except urllib.error.URLError as e:
         if not isinstance(getattr(e, "reason", None), TimeoutError):
@@ -252,7 +275,12 @@ def _call_local(cfg: Config, guide_rgb: np.ndarray, seed: int, timeout: float) -
 
 
 def _call_workers(cfg: Config, guide_rgb: np.ndarray, prompt: str, seed: int, timeout: float) -> bytes:
-    """Workers AI REST API (multipart). The reference image must be < 512x512."""
+    """Workers AI REST API with ordered token failover.
+
+    A rejected, exhausted, or otherwise skipped token is tried only once for a
+    given request; if every token fails, the render chain continues to its
+    configured fallback backend.
+    """
     model = CF_MODELS.get(cfg.cf_backend)
     if model is None:
         raise _Skip()
@@ -262,12 +290,21 @@ def _call_workers(cfg: Config, guide_rgb: np.ndarray, prompt: str, seed: int, ti
     if cfg.cf_backend in CF_STEPPED:
         fields["steps"] = str(cfg.steps)
     fields["input_image_0"] = ("guide.png", _png(ref), "image/png")
-    raw = _post(CF_URL.format(acct=cfg.cf_account, model=model), fields,
-                {"Authorization": f"Bearer {cfg.cf_token}"}, timeout)
-    body = json.loads(raw)
-    if not body.get("success", True):
-        raise RuntimeError("workers ai error")
-    return base64.b64decode((body.get("result") or body)["image"])   # REST wraps the model output in `result`
+    for account, token in cfg.worker_credentials:
+        try:
+            raw = _post(CF_URL.format(acct=account, model=model), fields,
+                        {"Authorization": f"Bearer {token}"}, timeout)
+            body = json.loads(raw)
+            if not body.get("success", True):
+                raise _Skip()
+            return base64.b64decode((body.get("result") or body)["image"])
+        except _Skip:
+            continue
+        except (KeyError, TypeError, ValueError):
+            # A malformed/error response can be token-specific. Give the next
+            # configured token one chance before allowing the normal fallback.
+            continue
+    raise _Skip()
 
 
 # ------------------------------------------------------------------------------------------ cache
