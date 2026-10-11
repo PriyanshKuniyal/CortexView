@@ -235,7 +235,7 @@ All numbers are computed from the masks and pixel spacing. **No AI.** The same i
   | `many_components` | More than 10 separate lesion blobs on this slice. |
   | `midline_estimated` | The mirror-symmetry fit wasn't trusted, so the middle of the brain's width was used for `hemisphere`. |
 
-- Code: `backend/cortexview/metrics.py`. `metrics.report(result)` takes a `pipeline.Result`.
+- Code: `backend/metrics_engine/`. `metrics_engine.report(result)` takes a `pipeline.Result`.
 
 ---
 

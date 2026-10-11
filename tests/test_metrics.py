@@ -8,7 +8,7 @@ import numpy as np
 
 from _setup import phantom
 from cortexview.layers import label_of, layer_ids
-from cortexview.metrics import compute, report, volumes_ml
+from metrics_engine import compute, report, volumes_ml
 from cortexview.phantom import write_seg, write_series
 from cortexview.pipeline import run
 from cortexview.segment import analyze

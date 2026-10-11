@@ -5,7 +5,7 @@
           -> pick slice (C3 rule or the caller's) -> Result
 
 This is what POST /api/analyze calls. It is stateless, does no logging, and never puts header values or
-filenames into messages (C3). Metrics (C4: `metrics.report(result)`) and rendering (C5) are separate steps
+filenames into messages (C3). Metrics (C4: `metrics_engine.report(result)`) and rendering (C5) are separate steps
 that consume Result.
 """
 from __future__ import annotations

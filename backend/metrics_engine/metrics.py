@@ -19,9 +19,9 @@ import scipy.ndimage as ndi
 from scipy.spatial import ConvexHull, QhullError
 from scipy.spatial.distance import pdist
 
-from .export import window01
-from .layers import load_layers
-from .segment import Params, _smooth, midline_plane
+from cortexview.export import window01
+from cortexview.layers import load_layers
+from cortexview.segment import Params, _smooth, midline_plane
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
