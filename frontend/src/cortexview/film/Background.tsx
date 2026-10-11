@@ -32,9 +32,12 @@ export function Background({ film }: { film: Film }) {
       g.clearRect(0, 0, W, Hh)
       let i = 0
       for (; i < last; i++) if (ps < starts[i + 1]) break
+      // The film has a final "Try it" scene after Applications. Clamp against the
+      // available palette—not the number of scenes—so a palette omission can never
+      // stop the requestAnimationFrame loop and trap scroll at a scene boundary.
       const f = i < last ? ease(clamp((ps - (starts[i + 1] - T)) / T)) : 0,
-        a = MOOD[i],
-        b = MOOD[Math.min(last, i + 1)]
+        a = MOOD[Math.min(MOOD.length - 1, i)],
+        b = MOOD[Math.min(MOOD.length - 1, i + 1)]
       const t = now / 1000
       SRC.forEach(([r, gg, bb, al], k) => {
         const x = (a[k][0] + (b[k][0] - a[k][0]) * f + 0.05 * Math.sin(t * 0.21 + k * 1.7)) * W

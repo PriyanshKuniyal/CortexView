@@ -58,7 +58,7 @@ export function CortexView() {
             <NumbersScene film={film} demo={demo} />
             <GuardrailsScene film={film} demo={demo} />
             <FineTuneScene film={film} demo={demo} />
-            <ApplicationsScene film={film} demo={demo} />
+            <ApplicationsScene film={film} />
           </>
         )}
         <TryScene film={film} />
