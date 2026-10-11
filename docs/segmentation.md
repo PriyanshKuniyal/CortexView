@@ -1,6 +1,6 @@
 # CortexView segmentation
 
-The primary segmenter is a 3D **nnU-Net** model that turns a T1/T1-post brain MRI volume into the five C1 layers: `skull`, `gray_matter`, `white_matter`, `csf` and `lesion`. Its inference folder is configured by `CORTEXVIEW_AI_WEIGHTS` and defaults to `C:\Users\Priyansh Kuniyal\Plie-seg-ai\ml\weights\cortexview_nnunet`.
+The primary segmenter is a 3D **nnU-Net** model that turns a T1/T1-post brain MRI volume into the five C1 layers: `skull`, `gray_matter`, `white_matter`, `csf` and `lesion`. Its inference folder is configured by `CORTEXVIEW_AI_WEIGHTS` and defaults to the bundled `ml/weights/cortexview_nnunet` directory.
 
 - **AI is the default.** `CORTEXVIEW_SEGMENTER=ai` is the default selection in the backend pipeline.
 - **Classical segmentation remains the safe fallback.** It is used for non-T1 scans, 2D/short series, or when CUDA, PyTorch, nnU-Net, or weights are unavailable; the response includes `segmenter_fallback`.

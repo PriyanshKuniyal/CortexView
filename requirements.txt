@@ -1,0 +1,10 @@
+# Full CortexView backend, including the CUDA-enabled nnU-Net segmenter.
+#
+# From the repository root:
+#   python -m pip install -r requirements.txt
+#
+# The AI segmenter requires an NVIDIA GPU with a CUDA 12.8-compatible driver.
+# On machines without one, CortexView stays usable and deliberately falls back
+# to the classical segmenter.
+-r backend/requirements.txt
+-r backend/requirements-ai.txt
