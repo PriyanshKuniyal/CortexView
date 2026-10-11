@@ -2,6 +2,7 @@
 
     files -> scan headers -> choose series (C3 rule) -> load pixels -> doctor labels (same frame only)
           -> [lesion from a FLAIR in the same frame, if no doctor lesion] -> segment (3D)
+             (classical or AI: CORTEXVIEW_SEGMENTER = classical | ai, contract C6)
           -> pick slice (C3 rule or the caller's) -> Result
 
 This is what POST /api/analyze calls. It is stateless, does no logging, and never puts header values or

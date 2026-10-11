@@ -1,11 +1,13 @@
 # Large external datasets (keep out of git)
 data/archive/remind/
+data/archive/ixi/
 
 # Python bytecode
 __pycache__/
 
-# Python
+# Python virtual environments
 .venv/
+.venv-ai/
 *.pyc
 
 # Secrets
@@ -17,6 +19,11 @@ data/guides/
 
 # Local segmentation outputs (may contain patient-derived pixels)
 data/out/
+
+# AI segmentation: nnU-Net data folders (patient-derived volumes) and trained weights
+ml/nnunet/
+ml/weights/
+ml/*_private.json
 
 # Model weights / training output
 *.safetensors

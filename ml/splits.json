@@ -1,0 +1,211 @@
+{
+  "seed": 20261010,
+  "note": "Patient-level split; no patient appears in both. Anonymous IDs only.",
+  "test": [
+    {
+      "id": "rm001",
+      "tumor": true,
+      "cerebrum": true,
+      "ventricles": true,
+      "t1_post_axial": true,
+      "tumor_drawn_on": "T2"
+    },
+    {
+      "id": "rm002",
+      "tumor": true,
+      "cerebrum": true,
+      "ventricles": true,
+      "t1_post_axial": true,
+      "tumor_drawn_on": "T2"
+    },
+    {
+      "id": "rm005",
+      "tumor": true,
+      "cerebrum": true,
+      "ventricles": true,
+      "t1_post_axial": true,
+      "tumor_drawn_on": "T1_post"
+    },
+    {
+      "id": "rm014",
+      "tumor": true,
+      "cerebrum": true,
+      "ventricles": true,
+      "t1_post_axial": true,
+      "tumor_drawn_on": "T2"
+    },
+    {
+      "id": "rm016",
+      "tumor": true,
+      "cerebrum": true,
+      "ventricles": true,
+      "t1_post_axial": true,
+      "tumor_drawn_on": "T1_post"
+    },
+    {
+      "id": "rm027",
+      "tumor": true,
+      "cerebrum": true,
+      "ventricles": true,
+      "t1_post_axial": true,
+      "tumor_drawn_on": "T1_post"
+    }
+  ],
+  "train": [
+    {
+      "id": "rm003",
+      "tumor": true,
+      "cerebrum": true,
+      "ventricles": false,
+      "t1_post_axial": true
+    },
+    {
+      "id": "rm004",
+      "tumor": true,
+      "cerebrum": false,
+      "ventricles": false,
+      "t1_post_axial": true
+    },
+    {
+      "id": "rm006",
+      "tumor": true,
+      "cerebrum": true,
+      "ventricles": true,
+      "t1_post_axial": true
+    },
+    {
+      "id": "rm007",
+      "tumor": true,
+      "cerebrum": true,
+      "ventricles": true,
+      "t1_post_axial": true
+    },
+    {
+      "id": "rm008",
+      "tumor": true,
+      "cerebrum": true,
+      "ventricles": false,
+      "t1_post_axial": true
+    },
+    {
+      "id": "rm009",
+      "tumor": true,
+      "cerebrum": false,
+      "ventricles": false,
+      "t1_post_axial": false
+    },
+    {
+      "id": "rm010",
+      "tumor": true,
+      "cerebrum": true,
+      "ventricles": false,
+      "t1_post_axial": true
+    },
+    {
+      "id": "rm011",
+      "tumor": true,
+      "cerebrum": true,
+      "ventricles": true,
+      "t1_post_axial": true
+    },
+    {
+      "id": "rm012",
+      "tumor": true,
+      "cerebrum": true,
+      "ventricles": true,
+      "t1_post_axial": true
+    },
+    {
+      "id": "rm013",
+      "tumor": true,
+      "cerebrum": true,
+      "ventricles": true,
+      "t1_post_axial": true
+    },
+    {
+      "id": "rm015",
+      "tumor": true,
+      "cerebrum": true,
+      "ventricles": true,
+      "t1_post_axial": true
+    },
+    {
+      "id": "rm017",
+      "tumor": true,
+      "cerebrum": true,
+      "ventricles": true,
+      "t1_post_axial": true
+    },
+    {
+      "id": "rm018",
+      "tumor": true,
+      "cerebrum": true,
+      "ventricles": false,
+      "t1_post_axial": true
+    },
+    {
+      "id": "rm019",
+      "tumor": true,
+      "cerebrum": false,
+      "ventricles": false,
+      "t1_post_axial": true
+    },
+    {
+      "id": "rm020",
+      "tumor": true,
+      "cerebrum": true,
+      "ventricles": true,
+      "t1_post_axial": true
+    },
+    {
+      "id": "rm021",
+      "tumor": true,
+      "cerebrum": true,
+      "ventricles": true,
+      "t1_post_axial": true
+    },
+    {
+      "id": "rm022",
+      "tumor": true,
+      "cerebrum": false,
+      "ventricles": false,
+      "t1_post_axial": true
+    },
+    {
+      "id": "rm023",
+      "tumor": true,
+      "cerebrum": true,
+      "ventricles": true,
+      "t1_post_axial": true
+    },
+    {
+      "id": "rm024",
+      "tumor": true,
+      "cerebrum": true,
+      "ventricles": true,
+      "t1_post_axial": true
+    },
+    {
+      "id": "rm025",
+      "tumor": true,
+      "cerebrum": true,
+      "ventricles": false,
+      "t1_post_axial": true
+    },
+    {
+      "id": "rm026",
+      "tumor": true,
+      "cerebrum": false,
+      "ventricles": false,
+      "t1_post_axial": true
+    },
+    {
+      "id": "rm028",
+      "tumor": true,
+      "cerebrum": true,
+      "ventricles": false,
+      "t1_post_axial": false
+    }
+  ],
+  "unused": 1
+}
