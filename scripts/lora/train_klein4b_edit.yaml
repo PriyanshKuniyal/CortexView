@@ -1,0 +1,84 @@
+# Local full run: FLUX.2 [klein] base-4B EDIT LoRA (guide.png -> illustration) on the RTX 5060 laptop (8 GB VRAM).
+# Replaces the Lightning 9B setup (train_klein9b_edit*.yaml). Checked against ai-toolkit f7a1fb9.
+# Run through the launcher, which sets ${PLIE} and points the text encoder at the local copy:
+#
+#   .venv-lora/Scripts/python scripts/lora/run_aitk.py scripts/lora/train_klein4b_edit.yaml
+#
+# Layout (all under the repo, gitignored):
+#   models/flux2-klein-base-4b/   base model (scripts/lora/download_klein4b.py)
+#   data/guides/remind/           guides (guide/, splits.csv)
+#   lora_work/dataset/            build_dataset.py output: reference/ (guides) + target/ (picked illustrations + captions)
+#   lora_work/output/             checkpoints and samples (this file's training_folder)
+#
+# 8 GB choices: 512 px (the guides' native size), transformer + text encoder quantized to qfloat8, low_vram,
+# text embeddings cached to disk so the text encoder is unloaded before the first step.
+job: extension
+config:
+  name: "cortexview_klein4b_edit_v1"
+  process:
+    - type: 'sd_trainer'
+      training_folder: "${PLIE}/lora_work/output"
+      device: cuda:0
+      network:
+        type: "lora"
+        linear: 32
+        linear_alpha: 32
+      save:
+        dtype: float16
+        save_every: 250
+        max_step_saves_to_keep: 8          # keep every checkpoint 250..2000 so you can pick by eye
+        push_to_hub: false
+      datasets:
+        - folder_path: "${PLIE}/lora_work/dataset/target"        # illustrations + .txt captions
+          control_path: "${PLIE}/lora_work/dataset/reference"    # guides, same filenames -> edit LoRA
+          caption_ext: "txt"
+          caption_dropout_rate: 0.05
+          shuffle_tokens: false
+          cache_latents_to_disk: true
+          resolution: [ 512 ]
+          num_workers: 0                    # Windows: avoid spawning dataloader worker processes
+      train:
+        batch_size: 1
+        steps: 2000                         # edit LoRAs usually peak ~1000-1750; with 20 pairs expect earlier
+        gradient_accumulation_steps: 1
+        train_unet: true
+        train_text_encoder: false
+        gradient_checkpointing: true
+        cache_text_embeddings: true         # encode captions + sample prompts once, then unload Qwen3-4B
+        noise_scheduler: "flowmatch"
+        optimizer: "adamw8bit"
+        lr: 1e-4
+        timestep_type: "weighted"
+        dtype: bf16
+      model:
+        # Transformer: flux-2-klein-base-4b.safetensors, VAE: ae.safetensors, both from this folder.
+        # Text encoder: this folder's text_encoder/ (set by run_aitk.py).
+        name_or_path: "${PLIE}/models/flux2-klein-base-4b"
+        arch: "flux2_klein_4b"
+        quantize: true
+        qtype: "qfloat8"
+        quantize_te: true
+        qtype_te: "qfloat8"
+        low_vram: true
+        model_kwargs:
+          match_target_res: false           # ai-toolkit UI default for klein
+      sample:
+        sampler: "flowmatch"
+        sample_every: 250
+        sample_start_step: 0
+        width: 512
+        height: 512
+        # 4 guides from TEST patients (never trained on), 4 different patients: large, medium, small tumor, no tumor.
+        prompts:
+          - "turn this brain segmentation map into a CRTXV1EW illustration  --ctrl_img ${PLIE}/data/guides/remind/guide/ReMIND-013_s079.png"
+          - "turn this brain segmentation map into a CRTXV1EW illustration  --ctrl_img ${PLIE}/data/guides/remind/guide/ReMIND-110_s073.png"
+          - "turn this brain segmentation map into a CRTXV1EW illustration  --ctrl_img ${PLIE}/data/guides/remind/guide/ReMIND-030_s146.png"
+          - "turn this brain segmentation map into a CRTXV1EW illustration  --ctrl_img ${PLIE}/data/guides/remind/guide/ReMIND-002_s083.png"
+        neg: ""
+        seed: 42
+        walk_seed: false
+        guidance_scale: 4
+        sample_steps: 30                    # base model is undistilled; 30 keeps sampling time down on the laptop
+meta:
+  name: "[name]"
+  version: '1.0'

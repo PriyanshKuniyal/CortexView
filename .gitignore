@@ -22,3 +22,9 @@ data/out/
 *.safetensors
 *.ckpt
 output/
+
+# Local LoRA training (scripts/lora, docs/lora-local.md): model weights, trainer checkout, venv, work dir
+models/
+third_party/
+.venv-lora/
+lora_work/

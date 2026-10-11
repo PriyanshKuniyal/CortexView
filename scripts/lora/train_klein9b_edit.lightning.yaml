@@ -1,0 +1,74 @@
+---
+# Full run: train_klein9b_edit.yaml with the Lightning Studio paths filled in (the template stays generic).
+# Checked against ai-toolkit f7a1fb9 (config/examples/train_lora_flux_kontext_24gb.yaml, toolkit/config_modules.py).
+#
+# Layout on the Studio (all under /teamspace/studios/this_studio, which is persistent):
+#   Plie/data/guides/remind/      guides from remind_synthseg.py (guide/, splits.csv, ...)
+#   cortexview_lora/candidates/   make_candidates.py output (TRAIN patients only)
+#   cortexview_lora/dataset/      build_dataset.py output: reference/ (guides) + target/ (picked illustrations + captions)
+#   cortexview_lora/output/       checkpoints and samples (this file's training_folder)
+#
+#   cd ~/ai-toolkit && python run.py /teamspace/studios/this_studio/Plie/scripts/lora/train_klein9b_edit.lightning.yaml
+job: extension
+config:
+  name: "cortexview_klein9b_edit_v1"
+  process:
+    - type: 'sd_trainer'
+      training_folder: "/teamspace/studios/this_studio/cortexview_lora/output"
+      device: cuda:0
+      network:
+        type: "lora"
+        linear: 32
+        linear_alpha: 32
+      save:
+        dtype: float16
+        save_every: 250
+        max_step_saves_to_keep: 8          # keep every checkpoint 250..2000 so you can pick by eye
+        push_to_hub: false
+      datasets:
+        - folder_path: "/teamspace/studios/this_studio/cortexview_lora/dataset/target"        # illustrations + .txt captions
+          control_path: "/teamspace/studios/this_studio/cortexview_lora/dataset/reference"    # guides, same filenames -> edit LoRA
+          caption_ext: "txt"
+          caption_dropout_rate: 0.05
+          shuffle_tokens: false
+          cache_latents_to_disk: true
+          resolution: [ 768 ]
+      train:
+        batch_size: 1
+        steps: 2000                         # edit LoRAs usually peak ~1000-1750; with 20 pairs expect earlier
+        gradient_accumulation_steps: 1
+        train_unet: true
+        train_text_encoder: false
+        gradient_checkpointing: true
+        noise_scheduler: "flowmatch"
+        optimizer: "adamw8bit"
+        lr: 1e-4
+        timestep_type: "weighted"
+        dtype: bf16
+      model:
+        # Transformer: flux-2-klein-base-9b.safetensors from this folder.
+        # ai-toolkit downloads the text encoder (Qwen/Qwen3-8B) and VAE (ai-toolkit/flux2_vae) from the Hub itself.
+        name_or_path: "/teamspace/studios/this_studio/flux2-klein-base-9b"
+        arch: "flux2_klein_9b"
+        quantize: true
+        quantize_te: true
+      sample:
+        sampler: "flowmatch"
+        sample_every: 250
+        sample_start_step: 0
+        width: 768
+        height: 768
+        # 4 guides from TEST patients (never trained on), 4 different patients: large, medium, small tumor, no tumor.
+        prompts:
+          - "turn this brain segmentation map into a CRTXV1EW illustration  --ctrl_img /teamspace/studios/this_studio/Plie/data/guides/remind/guide/ReMIND-013_s079.png"
+          - "turn this brain segmentation map into a CRTXV1EW illustration  --ctrl_img /teamspace/studios/this_studio/Plie/data/guides/remind/guide/ReMIND-110_s073.png"
+          - "turn this brain segmentation map into a CRTXV1EW illustration  --ctrl_img /teamspace/studios/this_studio/Plie/data/guides/remind/guide/ReMIND-030_s146.png"
+          - "turn this brain segmentation map into a CRTXV1EW illustration  --ctrl_img /teamspace/studios/this_studio/Plie/data/guides/remind/guide/ReMIND-002_s083.png"
+        neg: ""
+        seed: 42
+        walk_seed: false
+        guidance_scale: 4
+        sample_steps: 50                    # base model is undistilled
+meta:
+  name: "[name]"
+  version: '1.0'

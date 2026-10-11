@@ -9,7 +9,7 @@ import { MAX_UPLOAD_MB } from '../config'
  * - 114 ReMIND patients: scripts/analysis/download_remind.py (all 114 Preop patients).
  * - 3929 slices: data/archive/kaggle_3m holds 3929 image/mask pairs.
  * - 663 series / 10.9 GB: from the prototype; not verifiable from the repo (the download manifest isn't checked in).
- * - 9B, FLUX non-commercial license: FLUX.2 klein base-9B.
+ * - 4B, Apache-2.0: FLUX.2 klein base-4B (scripts/lora/train_klein4b_edit.yaml).
  * - 300 MB / 5 min: contract C3.
  */
 const FIGURES: { count: number; suffix?: string; d: string }[] = [
@@ -17,7 +17,7 @@ const FIGURES: { count: number; suffix?: string; d: string }[] = [
   { count: 114, d: 'ReMIND patients, surgeon-reviewed outlines · TCIA' },
   { count: 663, d: 'pre-op MRI and label series, 10.9 GB' },
   { count: 3929, d: 'extra slices with checked lesion masks' },
-  { count: 9, suffix: 'B', d: 'parameters, FLUX.2 klein base · FLUX non-commercial license' },
+  { count: 4, suffix: 'B', d: 'parameters, FLUX.2 klein base · Apache-2.0' },
   { count: N_LAYERS, suffix: 'layers', d: 'tissue layers, scalp to lesion' },
   { count: MAX_UPLOAD_MB, suffix: 'MB', d: 'largest upload' },
   { count: 5, suffix: 'min', d: 'max time in memory. Nothing hits disk' },
