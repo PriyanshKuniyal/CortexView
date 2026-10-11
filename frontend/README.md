@@ -27,12 +27,18 @@ The dev server proxies `/api/*` to `VITE_API_TARGET` (default `http://localhost:
 schema at `http://localhost:8000/api/docs`). The old chat UI at `/#chat` calls `POST /api/chat`, which the
 backend doesn't implement.
 
-## Vercel frontend + laptop backend
+## Vercel frontend + hosted backend
 
-Vite's development proxy does not exist after a Vercel deployment. Expose the laptop's FastAPI server through a
-stable HTTPS tunnel, configure `VITE_API_BASE_URL` in Vercel to that public URL, and redeploy. The browser then sends
-uploads directly to the tunnel, avoiding Vercel proxy body-size limits. Add the exact Vercel origin to the laptop
-backend's `CORS_ORIGINS`, for example `CORS_ORIGINS=https://your-project.vercel.app`.
+Vite's development proxy does not exist after a Vercel deployment. Host the FastAPI app on a service that supports
+long-running Python processes, configure `VITE_API_BASE_URL` in the Vercel project to that public HTTPS URL, and
+redeploy. The browser then sends uploads directly to the backend, avoiding Vercel proxy body-size limits. Add the
+exact Vercel origin to the backend's `CORS_ORIGINS`, for example `CORS_ORIGINS=https://your-project.vercel.app`.
+
+The backend keeps Workers AI credentials server-side. Set `CF_ACCOUNT_ID`, `CF_API_TOKEN`, and
+`CF_MODEL=workers-flux2-dev` in the backend deployment, and keep `RENDER_BACKENDS=workers,flat` (or include
+`workers` before `flat`). With those values present, each completed upload submits the generated guide image to
+Flux through the backend render job and the frontend polls that job. Without valid Workers AI credentials, the API
+uses its documented flat fallback instead of failing the analysis.
 
 ## Structure
 
