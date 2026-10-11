@@ -13,11 +13,13 @@ Usage (from repo root):
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
 from pathlib import Path
 
 import numpy as np
+import pydicom
 from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -35,6 +37,18 @@ def dice(a, b):
     return float("nan") if s == 0 else 2 * (a & b).sum() / s
 
 
+def striped_fraction(mask):
+    """Share of interior slices whose area is under half of both neighbours' (a real brain label
+    changes smoothly from slice to slice; a corrupted one alternates full and empty slices)."""
+    area = mask.reshape(mask.shape[0], -1).sum(1).astype(float)
+    zs = np.where(area > 0)[0]
+    if len(zs) < 10:
+        return 0.0
+    a = area[zs[0]:zs[-1] + 1]
+    inner = a[1:-1]
+    return float(np.mean((inner < 0.5 * a[:-2]) & (inner < 0.5 * a[2:])))
+
+
 def score(seg, ref, vox_ml):
     out = {}
     if "brain" in ref:
@@ -43,6 +57,11 @@ def score(seg, ref, vox_ml):
         if inside < 0.97:
             # a real brain label lies inside the head; ReMIND-004's cerebrum SEG is sheared in the file
             out["reference_suspect"] = f"{100 * (1 - inside):.0f}% of the brain label lies outside the head"
+            return out
+        jumps = striped_fraction(truth)
+        if jumps > 0.05:
+            # some ReMIND cerebrum SEGs come out as stripes (slices missing in between), e.g. 010, 037
+            out["reference_suspect"] = f"{100 * jumps:.0f}% of the brain label's slices are missing/striped"
             return out
         ic = seg.intracranial
         out["brain_dice"] = dice(ic, truth)
@@ -147,56 +166,110 @@ def parse_patients(s):
     return out
 
 
+def load_case(folder, family, cache_dir):
+    """(Volume, {role: mask on the volume's grid}) for one patient and sequence family.
+    Series choice mirrors C3: the series a tumour label was drawn on (same coordinate frame) first, then
+    series that can be shown axially, then more slices / finer voxels. References come only from SEG
+    files in the same coordinate frame (patients can move between series)."""
+    cache = cache_dir / f"{folder.parent.name}_{family}.npz" if cache_dir else None
+    if cache and cache.exists():
+        try:
+            with np.load(cache, allow_pickle=False) as z:
+                from cortexview.volume import Volume
+                vol = Volume(z["data"], z["affine"], sequence=str(z["sequence"]), sequence_source="header",
+                             frame_of_reference=str(z["frame"]), acquired_plane=str(z["plane"]))
+                return vol, {k[4:]: z[k] for k in z.files if k.startswith("ref_")}
+        except Exception:                                # half-written by an interrupted run
+            import gc
+            gc.collect()                                 # np.load can leave the handle open on failure
+            try:
+                cache.unlink()
+            except OSError:
+                cache = None                             # still locked: load without caching
+    series, seg_infos, _ = io.scan(sorted(folder.rglob("*.dcm")))
+    fam = [s for s in series.values() if s.sequence in SEQ_PREF[family]]
+    if not fam:
+        return None, {}
+    tumour_frames = {g.frame_of_reference for g in seg_infos if "lesion" in g.roles}
+    info = sorted(fam, key=lambda s: (s.frame_of_reference not in tumour_frames, not s.axial_ok,
+                                      -len(s.sources), float(np.prod(s.spacing_mm))))[0]
+    vol = io.load_info(info)
+    masks = [m for g in seg_infos if g.frame_of_reference == vol.frame_of_reference
+             for m in io.load_seg(pydicom.dcmread(g.source))]
+    ref, _ = io.doctor_labels_on(vol, masks)            # strict: same coordinate frame only
+    if cache:
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        tmp = cache.with_suffix(".tmp.npz")
+        np.savez_compressed(tmp, data=vol.data, affine=vol.affine, sequence=vol.sequence,
+                            frame=vol.frame_of_reference or "", plane=vol.acquired_plane or "",
+                            **{f"ref_{k}": v for k, v in ref.items()})
+        os.replace(tmp, cache)
+    return vol, ref
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--remind", default=str(ROOT / "data/archive/remind"))
     ap.add_argument("--out", default=str(ROOT / "data/out/seg"))
     ap.add_argument("--patients", default="1-5")
     ap.add_argument("--sequence", default="T1", choices=sorted(SEQ_PREF))
+    ap.add_argument("--no-sheets", action="store_true", help="skip contact sheets")
+    ap.add_argument("--check-determinism", action="store_true", help="run twice and compare masks")
+    ap.add_argument("--cache", default=str(ROOT / "data/out/cache"),
+                    help="where loaded volumes are cached (gitignored); '' to disable")
+    ap.add_argument("--cache-only", action="store_true", help="only load + cache, no segmentation")
     args = ap.parse_args()
+    cache_dir = Path(args.cache) if args.cache else None
+    if args.cache_only:
+        for pid in parse_patients(args.patients):
+            folder = Path(args.remind) / f"ReMIND-{pid:03d}" / "Preop"
+            if folder.exists():
+                t = time.perf_counter()
+                vol, ref = load_case(folder, args.sequence, cache_dir)
+                print(f"case{pid:02d} {args.sequence}: {'-' if vol is None else vol.shape} refs={sorted(ref)} "
+                      f"{time.perf_counter() - t:.1f}s", flush=True)
+        return
 
     rows = []
-    for case_no, pid in enumerate(parse_patients(args.patients), 1):
+    for pid in parse_patients(args.patients):
         folder = Path(args.remind) / f"ReMIND-{pid:03d}" / "Preop"
         name = f"case{pid:02d}"
         if not folder.exists():
-            print(f"{name}: not downloaded")
             continue
-        series, segs = io.group_series(io.read_folder(folder))
-        vols = [io.load_series(s) for s in series.values()]
-        vols = [v for pref in SEQ_PREF[args.sequence] for v in vols if v.sequence == pref]
-        if not vols:
-            print(f"{name}: no {args.sequence} series")
+        vol, ref = load_case(folder, args.sequence, cache_dir)
+        if vol is None:
             continue
-        vol = vols[0]
-        ref, warn = io.doctor_labels_on(vol, [m for s in segs for m in io.load_seg(s)], allow_frame_mismatch=True)
 
         t = time.perf_counter()
         seg = analyze(vol.data, vol.spacing, vol.sequence)          # fully automatic
         dt = time.perf_counter() - t
-        again = analyze(vol.data, vol.spacing, vol.sequence)
-        deterministic = all(np.array_equal(seg.masks[k], again.masks[k]) for k in seg.masks)
+        det = ""
+        if args.check_determinism:
+            again = analyze(vol.data, vol.spacing, vol.sequence)
+            det = f"  deterministic={all(np.array_equal(seg.masks[k], again.masks[k]) for k in seg.masks)}"
 
         vox_ml = float(np.prod(vol.spacing)) / 1000
         m = score(seg, ref, vox_ml)
+        if vol.sequence != "FLAIR":
+            m.pop("lesion_dice", None)                  # no automatic lesion on T1, nothing to score
         truth = None
-        if "brain" in ref:
+        if "brain" in ref and "reference_suspect" not in m:
             truth = ref["brain"] | ref.get("lesion", False) | ref.get("ventricles", False)
-        contact_sheet(name, vol, seg, truth, Path(args.out), m)
-        vols_ml = {k: round(float(v.sum() * vox_ml), 1) for k, v in seg.masks.items()}
-        print(f"{name} {vol.sequence} {vol.shape} {np.round(vol.spacing, 2).tolist()}  {dt:.2f}s  "
-              f"deterministic={deterministic}")
-        print(f"   layer volumes mL: {vols_ml}   confidence: {seg.confidence}")
-        if seg.stats:
-            print(f"   class separation d': GM/WM {seg.stats['gm_wm_separation']:.2f}  "
-                  f"CSF {seg.stats['csf_separation']:.2f}")
+        if not args.no_sheets:
+            contact_sheet(name, vol, seg, truth, Path(args.out), m)
+        vols_ml = {k: round(float(v.sum() * vox_ml)) for k, v in seg.masks.items()}
+        print(f"{name} {vol.sequence} {vol.acquired_plane} {vol.shape} {np.round(vol.spacing, 2).tolist()}  "
+              f"{dt:.1f}s{det}  refs={sorted(ref)}")
+        print(f"   mL {vols_ml}  conf {seg.confidence}")
         print("   " + "  ".join(fmt(k, v) for k, v in m.items()) + (f"  warnings={seg.warnings}" if seg.warnings else ""))
         rows.append(m)
 
+    print(f"--- {args.sequence}: {len(rows)} cases")
     for key in ("brain_dice", "brain_recall", "brain_precision", "ventricle_recall_as_csf", "lesion_dice"):
         vals = [r[key] for r in rows if key in r]
         if vals:
-            print(f"MEAN {key}: {np.mean(vals):.3f}  (n={len(vals)})")
+            print(f"MEAN {key}: {np.mean(vals):.3f}  median {np.median(vals):.3f}  "
+                  f"min {np.min(vals):.3f}  (n={len(vals)})")
 
 
 if __name__ == "__main__":

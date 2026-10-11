@@ -26,9 +26,11 @@ def read_datasets(paths) -> list[Dataset]:
     out = []
     for p in paths:
         try:
-            out.append(pydicom.dcmread(str(p)))
+            out.append(pydicom.dcmread(p if hasattr(p, "read") else str(p)))
         except (pydicom.errors.InvalidDicomError, OSError):
             continue
+        if hasattr(p, "seek"):
+            p.seek(0)
     return out
 
 
@@ -38,6 +40,109 @@ def read_folder(folder) -> list[Dataset]:
 
 def is_seg(ds: Dataset) -> bool:
     return str(ds.get("SOPClassUID", "")) == SEG_SOP_CLASS or ds.get("Modality") == "SEG"
+
+
+@dataclass
+class SeriesInfo:
+    """Header-only summary of one MR series (no pixels decoded)."""
+    uid: str
+    sources: list                     # paths or file-like objects, one per slice
+    sequence: str
+    sequence_source: str
+    acquired_plane: str               # axial | coronal | sagittal (from the slice orientation)
+    spacing_mm: tuple                 # (slice gap, row, column) approx.
+    frame_of_reference: str | None
+
+    @property
+    def axial_ok(self) -> bool:
+        """Can be shown as axial slices without resampling: acquired axial, or a 3D series whose voxels
+        are close to cubes (it is then just re-stacked)."""
+        sp = np.asarray(self.spacing_mm, float)
+        return self.acquired_plane == "axial" or (len(self.sources) >= 40 and sp.max() / sp.min() <= 1.5)
+
+
+@dataclass
+class SegInfo:
+    source: object
+    frame_of_reference: str | None
+    roles: list                       # role of each segment ("lesion", "ventricles", "brain", None)
+    referenced_series: list           # SeriesInstanceUIDs the SEG says it was drawn on (may be empty)
+
+
+def scan(sources) -> tuple[dict[str, SeriesInfo], list[SegInfo], int]:
+    """Read headers only (fast) and group into MR series and SEG files.
+    Returns ({series uid: SeriesInfo}, [SegInfo], number of non-DICOM / unusable files)."""
+    by_uid: dict[str, list] = defaultdict(list)
+    first: dict[str, Dataset] = {}
+    segs, bad = [], 0
+    for src in sources:
+        try:
+            ds = pydicom.dcmread(src, stop_before_pixels=True)
+        except (pydicom.errors.InvalidDicomError, OSError, ValueError, KeyError):
+            bad += 1
+            continue
+        if hasattr(src, "seek"):
+            src.seek(0)
+        if is_seg(ds):
+            items = ds.get("SegmentSequence", [])
+            refs = [str(r.SeriesInstanceUID) for r in ds.get("ReferencedSeriesSequence", [])
+                    if "SeriesInstanceUID" in r]
+            segs.append(SegInfo(src, str(ds.get("FrameOfReferenceUID", "")) or None,
+                                [segment_role(it) for it in items], refs))
+        elif ds.get("Modality") == "MR" and "ImageOrientationPatient" in ds and "PixelSpacing" in ds:
+            uid = str(ds.SeriesInstanceUID)
+            by_uid[uid].append(src)
+            first.setdefault(uid, ds)
+        else:
+            bad += 1
+    series = {}
+    for uid, srcs in by_uid.items():
+        ds = first[uid]
+        iop = np.array([float(v) for v in ds.ImageOrientationPatient])
+        normal = np.abs(np.cross(iop[:3], iop[3:]))
+        plane = ("sagittal", "coronal", "axial")[int(np.argmax(normal))]
+        gap = _num(ds.get("SpacingBetweenSlices")) or _num(ds.get("SliceThickness")) or 1.0
+        seq, seq_src = detect_sequence(ds)
+        series[uid] = SeriesInfo(uid, srcs, seq, seq_src, plane,
+                                 (gap, float(ds.PixelSpacing[0]), float(ds.PixelSpacing[1])),
+                                 str(ds.get("FrameOfReferenceUID", "")) or None)
+    return series, segs, bad
+
+
+SEQUENCE_PREFERENCE = ("T1_post", "FLAIR", "T2")
+
+
+def choose_series(series: dict[str, SeriesInfo], segs: list[SegInfo]) -> SeriesInfo | None:
+    """Contract C3 auto choice: the axial series a doctor tumour label was drawn on, else axial
+    T1-post, then FLAIR, then T2, then any axial MR. Ties: more slices first, then finer voxels."""
+    cands = [s for s in series.values() if s.axial_ok]
+    if not cands:
+        return None
+
+    def finest(group):
+        return sorted(group, key=lambda s: (-len(s.sources), float(np.prod(s.spacing_mm)), s.uid))[0]
+
+    def preferred(group):
+        for seq in SEQUENCE_PREFERENCE:
+            hit = [s for s in group if s.sequence == seq]
+            if hit:
+                return finest(hit)
+        return finest(group)
+
+    tumour = [g for g in segs if "lesion" in g.roles]
+    for g in tumour:
+        hit = [s for s in cands if s.uid in g.referenced_series]
+        if hit:
+            return preferred(hit)
+    # no explicit reference: any series in the label's coordinate frame can show it
+    frames = {g.frame_of_reference for g in tumour if g.frame_of_reference}
+    hit = [s for s in cands if s.frame_of_reference in frames]
+    return preferred(hit or cands)
+
+
+def load_info(info: SeriesInfo, to_axial: bool = True) -> Volume:
+    """Decode the pixels of one scanned series."""
+    return load_series(read_datasets(info.sources), to_axial=to_axial)
 
 
 def group_series(datasets) -> tuple[dict[str, list[Dataset]], list[Dataset]]:
@@ -133,6 +238,27 @@ class SegMask:
     data: np.ndarray            # bool [k, j, i] on the SEG's own grid
     affine: np.ndarray
     frame_of_reference: str | None
+    suspect: bool = False       # frames look sheared/wrapped: the file probably decodes wrongly
+
+
+def looks_sheared(data: np.ndarray, affine: np.ndarray) -> bool:
+    """Some DICOM-SEG writers pack 1-bit frames in a way that, read per the standard, shifts every frame
+    sideways and wraps it around the frame edge (seen in several ReMIND files whose frame size is not a
+    multiple of 8 bits). Signature: the mask's centre drifts more than 1.5 mm sideways per 1.5 mm of depth
+    AND over 20% of frames touch both the left and right frame edges. Real anatomy does neither."""
+    gap = float(np.linalg.norm(affine[:3, 0]))
+    col_mm = float(np.linalg.norm(affine[:3, 2]))
+    area = data.reshape(data.shape[0], -1).sum(1)
+    ok = np.where(area > max(20, 0.05 * area.max()))[0] if area.max() else []
+    if len(ok) < 6:
+        return False
+    step = max(1, int(round(1.5 / max(gap, 1e-6))))
+    cx = {int(k): float(np.nonzero(data[k])[1].mean()) * col_mm for k in ok}
+    shifts = [abs(cx[k + step] - cx[k]) for k in cx if k + step in cx]
+    if len(shifts) < 3:
+        return False
+    wrap = np.mean([data[k][:, :2].any() and data[k][:, -2:].any() for k in ok])
+    return float(np.median(shifts)) > 1.5 and float(wrap) > 0.2
 
 
 _ROLE_RULES = [
@@ -156,8 +282,8 @@ def segment_role(item: Dataset) -> str | None:
     return None
 
 
-def doctor_labels_on(vol: Volume, masks: list[SegMask],
-                     allow_frame_mismatch: bool = False) -> tuple[dict[str, np.ndarray], list[str]]:
+def doctor_labels_on(vol: Volume, masks: list[SegMask], allow_frame_mismatch: bool = False,
+                     allow_suspect: bool = False) -> tuple[dict[str, np.ndarray], list[str]]:
     """Map doctor SEG masks onto `vol`'s voxel grid via patient coordinates (nearest-neighbour).
     Masks with the same role are merged. Returns ({role: bool mask}, warnings).
 
@@ -168,6 +294,9 @@ def doctor_labels_on(vol: Volume, masks: list[SegMask],
     for m in masks:
         if m.role is None:
             warnings.append("seg_segment_ignored")
+            continue
+        if m.suspect and not allow_suspect:
+            warnings.append("seg_decode_suspect")       # would paint a garbled label: not used
             continue
         if m.frame_of_reference != vol.frame_of_reference:
             if not allow_frame_mismatch:
@@ -230,5 +359,6 @@ def load_seg(ds: Dataset) -> list[SegMask]:
             data=data,
             affine=affine,
             frame_of_reference=str(ds.get("FrameOfReferenceUID", "")) or None,
+            suspect=looks_sheared(data, affine),
         ))
     return out
