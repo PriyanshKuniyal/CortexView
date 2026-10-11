@@ -190,7 +190,7 @@ All values are Dice.
 ```
 python -m venv backend/.venv
 backend/.venv/Scripts/python.exe -m pip install -r backend/requirements.txt
-cd tests && ../backend/.venv/Scripts/python.exe -m unittest            # 30 tests, ~1 min
+cd tests && ../backend/.venv/Scripts/python.exe -m unittest            # 49 tests, ~2.5 min
 backend/.venv/Scripts/python.exe -I scripts/seg/run_on_remind.py --patients 1-45 --sequence T1   # T1 | T2 | FLAIR
 backend/.venv/Scripts/python.exe -I scripts/seg/eval_kaggle.py
 backend/.venv/Scripts/python.exe -I scripts/seg/export_remind.py --patients 2,7,13,16,25 --out data/out/slices --require-lesion

@@ -28,11 +28,16 @@ def pad_square(a: np.ndarray, value=0):
     return np.pad(a, widths, constant_values=value), pad
 
 
-def window_8bit(slice_img: np.ndarray, region: np.ndarray | None = None, lo_pct=1.0, hi_pct=99.0):
-    """Percentile window (inside `region`, e.g. the head) to 0..255."""
+def window01(slice_img: np.ndarray, region: np.ndarray | None = None, lo_pct=1.0, hi_pct=99.0):
+    """Percentile window (inside `region`, e.g. the head) to 0..1."""
     vals = slice_img[region] if region is not None and region.any() else slice_img.ravel()
     lo, hi = np.percentile(vals, [lo_pct, hi_pct])
-    return (np.clip((slice_img - lo) / max(hi - lo, 1e-6), 0, 1) * 255).round().astype(np.uint8)
+    return np.clip((slice_img - lo) / max(hi - lo, 1e-6), 0, 1)
+
+
+def window_8bit(slice_img: np.ndarray, region: np.ndarray | None = None, lo_pct=1.0, hi_pct=99.0):
+    """Percentile window (inside `region`, e.g. the head) to 0..255."""
+    return (window01(slice_img, region, lo_pct, hi_pct) * 255).round().astype(np.uint8)
 
 
 def label_map(masks: dict[str, np.ndarray]) -> np.ndarray:
