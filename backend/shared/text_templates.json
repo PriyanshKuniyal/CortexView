@@ -1,0 +1,6 @@
+[
+  { "template_id": "lesion_area", "layer": "lesion", "text": "The highlighted area covers about {area_cm2} cm², {pct_intracranial}% of the space inside the skull." },
+  { "template_id": "lesion_diameter", "layer": "lesion", "text": "At its widest it measures about {max_diameter_mm} mm on this slice." },
+  { "template_id": "lesion_side", "layer": "lesion", "text": "It is on the {hemisphere} side of the brain." },
+  { "template_id": "layer_volume", "layer": "all", "text": "{layer_name} makes up about {volume_ml} ml in this scan." }
+]
