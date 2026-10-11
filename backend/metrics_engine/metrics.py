@@ -23,12 +23,15 @@ from cortexview.export import window01
 from cortexview.layers import load_layers
 from cortexview.segment import Params, _smooth, midline_plane
 
-ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))      # shared/contracts.py sits at the repo root, next to backend/
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+ROOT = BACKEND_ROOT.parent
+for p in (str(BACKEND_ROOT), str(ROOT)):
+    if p not in sys.path:
+        sys.path.append(p)
 from shared.contracts import Intensity, LayerMetrics, MetricsReport, TextItem  # noqa: E402
 
-TEMPLATES_JSON = ROOT / "shared" / "text_templates.json"
+SHARED_ROOT = BACKEND_ROOT / "shared" if (BACKEND_ROOT / "shared").exists() else ROOT / "shared"
+TEMPLATES_JSON = SHARED_ROOT / "text_templates.json"
 
 SMALL_REGION_PX = 50        # fewer pixels: warning `small_region`, and an auto layer drops to `low`
 MANY_COMPONENTS = 10        # more lesion blobs: warning `many_components` (GM/CSF are always fragmented)

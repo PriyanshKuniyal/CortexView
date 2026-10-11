@@ -6,7 +6,10 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
-LAYERS_JSON = Path(__file__).resolve().parents[2] / "shared" / "layers.json"
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+ROOT = BACKEND_ROOT.parent
+LAYERS_JSON = (BACKEND_ROOT / "shared" / "layers.json" if (BACKEND_ROOT / "shared").exists()
+               else ROOT / "shared" / "layers.json")
 
 
 @dataclass(frozen=True)
