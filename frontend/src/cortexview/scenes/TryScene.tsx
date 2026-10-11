@@ -8,6 +8,8 @@ import type { Film } from '../film/useScrollFilm'
 import { Progress } from '../try/Progress'
 import { Report, type RenderInfo } from '../try/Report'
 import { Viewer, type View } from '../try/Viewer'
+import { SampleList, sampleFile, useSamples, type Sample } from '../try/Samples'
+import { Credits } from '../try/Credits'
 
 type RenderState = 'idle' | 'pending' | 'done' | 'failed'
 
@@ -79,6 +81,9 @@ export function TryScene({ film }: { film: Film }) {
   const [peel, setPeel] = useState(0)
   const [sel, setSel] = useState<LayerId | null>(null)
   const [hover, setHover] = useState<LayerId | null>(null)
+  const [source, setSource] = useState<Sample | null>(null)
+  const [picking, setPicking] = useState<string | null>(null)
+  const samples = useSamples()
   const run = useRef<AbortController | null>(null)
 
   useEffect(() => () => run.current?.abort(), [])
@@ -110,7 +115,22 @@ export function TryScene({ film }: { film: Film }) {
     }
   }
 
-  async function start(files: File[]) {
+  async function pick(s: Sample) {
+    setPicking(s.id)
+    setError('')
+    let f: File
+    try {
+      f = await sampleFile(s)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Couldn’t load the sample.')
+      return
+    } finally {
+      setPicking(null)
+    }
+    start([f], s)
+  }
+
+  async function start(files: File[], from: Sample | null = null) {
     if (!files.length) return
     run.current?.abort()
     const ac = new AbortController()
@@ -142,6 +162,7 @@ export function TryScene({ film }: { film: Film }) {
     }
 
     const ready = r.layers.every((l) => l.illustrated_png)
+    setSource(from)
     setRes(r)
     setJob(null)
     setIllustrated(ready ? Object.fromEntries(r.layers.map((l) => [l.id, l.illustrated_png!])) : {})
@@ -192,7 +213,7 @@ export function TryScene({ film }: { film: Film }) {
           </div>
         ) : !res ? (
           <div className="try-idle" data-d="0.8">
-            <DropZone big onFiles={start} />
+            <DropZone big onFiles={(f) => start(f)} />
             <ol className="try-how">
               <li>
                 <b>Five layers, found by math.</b> Skull, gray matter, white matter, fluid and any suspected lesion are outlined pixel by pixel.
@@ -205,6 +226,7 @@ export function TryScene({ film }: { film: Film }) {
               </li>
             </ol>
             <p className="note">Files are analyzed in memory on the CortexView server and never written to disk. Educational aid, not for diagnosis.</p>
+            <SampleList samples={samples} onPick={pick} busyId={picking} />
           </div>
         ) : (
           <div className="try-res">
@@ -260,7 +282,16 @@ export function TryScene({ film }: { film: Film }) {
                 onSelect={(id) => setSel((s) => (s === id ? null : id))}
                 onHover={setHover}
               />
-              <DropZone onFiles={start} />
+              {source && (
+                <p className="try-src">
+                  Sample: <b>{source.title}</b> · {source.detail} ·{' '}
+                  <a href={source.credit.url} target="_blank" rel="noreferrer">
+                    {source.credit.label} ↗
+                  </a>
+                </p>
+              )}
+              <DropZone onFiles={(f) => start(f)} />
+              <SampleList samples={samples} onPick={pick} busyId={picking} compact />
             </div>
             <Report
               res={res}
@@ -277,6 +308,7 @@ export function TryScene({ film }: { film: Film }) {
             {error}
           </p>
         )}
+        {!job && <Credits />}
       </div>
     </section>
   )

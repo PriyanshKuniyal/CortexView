@@ -1,0 +1,254 @@
+[
+ {
+  "id": "gbm-right-front",
+  "title": "Tumor, right front",
+  "detail": "Glioblastoma \u00b7 FLAIR",
+  "kind": "tumor",
+  "file": "samples/gbm-right-front.zip",
+  "thumb": "samples/gbm-right-front.png",
+  "size_mb": 2.6,
+  "slices": 60,
+  "credit": {
+   "label": "UPenn-GBM \u00b7 TCIA",
+   "url": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
+  }
+ },
+ {
+  "id": "gbm-left-upper-front",
+  "title": "Tumor, left upper front",
+  "detail": "Glioblastoma \u00b7 FLAIR",
+  "kind": "tumor",
+  "file": "samples/gbm-left-upper-front.zip",
+  "thumb": "samples/gbm-left-upper-front.png",
+  "size_mb": 2.6,
+  "slices": 60,
+  "credit": {
+   "label": "UPenn-GBM \u00b7 TCIA",
+   "url": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
+  }
+ },
+ {
+  "id": "gbm-left-lower-front",
+  "title": "Large tumor, left lower front",
+  "detail": "Glioblastoma \u00b7 FLAIR",
+  "kind": "tumor",
+  "file": "samples/gbm-left-lower-front.zip",
+  "thumb": "samples/gbm-left-lower-front.png",
+  "size_mb": 2.4,
+  "slices": 60,
+  "credit": {
+   "label": "UPenn-GBM \u00b7 TCIA",
+   "url": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
+  }
+ },
+ {
+  "id": "gbm-right-temple",
+  "title": "Tumor, right side near the temple",
+  "detail": "Glioblastoma \u00b7 FLAIR",
+  "kind": "tumor",
+  "file": "samples/gbm-right-temple.zip",
+  "thumb": "samples/gbm-right-temple.png",
+  "size_mb": 2.8,
+  "slices": 60,
+  "credit": {
+   "label": "UPenn-GBM \u00b7 TCIA",
+   "url": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
+  }
+ },
+ {
+  "id": "gbm-right-large",
+  "title": "Large tumor, right side",
+  "detail": "Glioblastoma \u00b7 FLAIR",
+  "kind": "tumor",
+  "file": "samples/gbm-right-large.zip",
+  "thumb": "samples/gbm-right-large.png",
+  "size_mb": 2.7,
+  "slices": 60,
+  "credit": {
+   "label": "UPenn-GBM \u00b7 TCIA",
+   "url": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
+  }
+ },
+ {
+  "id": "gbm-left-back",
+  "title": "Tumor, left back",
+  "detail": "Glioblastoma \u00b7 FLAIR",
+  "kind": "tumor",
+  "file": "samples/gbm-left-back.zip",
+  "thumb": "samples/gbm-left-back.png",
+  "size_mb": 2.7,
+  "slices": 60,
+  "credit": {
+   "label": "UPenn-GBM \u00b7 TCIA",
+   "url": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
+  }
+ },
+ {
+  "id": "gbm-right-back",
+  "title": "Tumor, right back",
+  "detail": "Glioblastoma \u00b7 FLAIR",
+  "kind": "tumor",
+  "file": "samples/gbm-right-back.zip",
+  "thumb": "samples/gbm-right-back.png",
+  "size_mb": 2.7,
+  "slices": 60,
+  "credit": {
+   "label": "UPenn-GBM \u00b7 TCIA",
+   "url": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
+  }
+ },
+ {
+  "id": "gbm-small-left-back",
+  "title": "Small tumor, left back",
+  "detail": "Glioblastoma \u00b7 FLAIR",
+  "kind": "tumor",
+  "file": "samples/gbm-small-left-back.zip",
+  "thumb": "samples/gbm-small-left-back.png",
+  "size_mb": 2.5,
+  "slices": 60,
+  "credit": {
+   "label": "UPenn-GBM \u00b7 TCIA",
+   "url": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
+  }
+ },
+ {
+  "id": "gbm-left-top",
+  "title": "Tumor near the top of the brain, left",
+  "detail": "Glioblastoma \u00b7 FLAIR",
+  "kind": "tumor",
+  "file": "samples/gbm-left-top.zip",
+  "thumb": "samples/gbm-left-top.png",
+  "size_mb": 3.7,
+  "slices": 32,
+  "credit": {
+   "label": "UPenn-GBM \u00b7 TCIA",
+   "url": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
+  }
+ },
+ {
+  "id": "gbm-right-upper-back",
+  "title": "Tumor, right upper back",
+  "detail": "Glioblastoma \u00b7 FLAIR",
+  "kind": "tumor",
+  "file": "samples/gbm-right-upper-back.zip",
+  "thumb": "samples/gbm-right-upper-back.png",
+  "size_mb": 2.7,
+  "slices": 60,
+  "credit": {
+   "label": "UPenn-GBM \u00b7 TCIA",
+   "url": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
+  }
+ },
+ {
+  "id": "gbm-right-midline",
+  "title": "Tumor beside the midline, right",
+  "detail": "Glioblastoma \u00b7 FLAIR",
+  "kind": "tumor",
+  "file": "samples/gbm-right-midline.zip",
+  "thumb": "samples/gbm-right-midline.png",
+  "size_mb": 2.6,
+  "slices": 60,
+  "credit": {
+   "label": "UPenn-GBM \u00b7 TCIA",
+   "url": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
+  }
+ },
+ {
+  "id": "gbm-small-right",
+  "title": "Small tumor, right side",
+  "detail": "Glioblastoma \u00b7 FLAIR",
+  "kind": "tumor",
+  "file": "samples/gbm-small-right.zip",
+  "thumb": "samples/gbm-small-right.png",
+  "size_mb": 2.5,
+  "slices": 60,
+  "credit": {
+   "label": "UPenn-GBM \u00b7 TCIA",
+   "url": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
+  }
+ },
+ {
+  "id": "gbm-right-swelling",
+  "title": "Tumor with wide swelling, right",
+  "detail": "Glioblastoma \u00b7 FLAIR",
+  "kind": "tumor",
+  "file": "samples/gbm-right-swelling.zip",
+  "thumb": "samples/gbm-right-swelling.png",
+  "size_mb": 2.5,
+  "slices": 60,
+  "credit": {
+   "label": "UPenn-GBM \u00b7 TCIA",
+   "url": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
+  }
+ },
+ {
+  "id": "gbm-left-lower",
+  "title": "Tumor, left lower brain",
+  "detail": "Glioblastoma \u00b7 FLAIR",
+  "kind": "tumor",
+  "file": "samples/gbm-left-lower.zip",
+  "thumb": "samples/gbm-left-lower.png",
+  "size_mb": 2.4,
+  "slices": 60,
+  "credit": {
+   "label": "UPenn-GBM \u00b7 TCIA",
+   "url": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
+  }
+ },
+ {
+  "id": "healthy-01",
+  "title": "Healthy adult brain, 1",
+  "detail": "Research volunteer \u00b7 FLAIR",
+  "kind": "normal",
+  "file": "samples/healthy-01.zip",
+  "thumb": "samples/healthy-01.png",
+  "size_mb": 4.3,
+  "slices": 28,
+  "credit": {
+   "label": "LEMON \u00b7 OpenNeuro",
+   "url": "https://openneuro.org/datasets/ds000221"
+  }
+ },
+ {
+  "id": "healthy-02",
+  "title": "Healthy adult brain, 2",
+  "detail": "Research volunteer \u00b7 FLAIR",
+  "kind": "normal",
+  "file": "samples/healthy-02.zip",
+  "thumb": "samples/healthy-02.png",
+  "size_mb": 4.6,
+  "slices": 28,
+  "credit": {
+   "label": "LEMON \u00b7 OpenNeuro",
+   "url": "https://openneuro.org/datasets/ds000221"
+  }
+ },
+ {
+  "id": "healthy-03",
+  "title": "Healthy adult brain, 3",
+  "detail": "Research volunteer \u00b7 FLAIR",
+  "kind": "normal",
+  "file": "samples/healthy-03.zip",
+  "thumb": "samples/healthy-03.png",
+  "size_mb": 5.2,
+  "slices": 28,
+  "credit": {
+   "label": "LEMON \u00b7 OpenNeuro",
+   "url": "https://openneuro.org/datasets/ds000221"
+  }
+ },
+ {
+  "id": "healthy-04",
+  "title": "Healthy adult brain, 4",
+  "detail": "Research volunteer \u00b7 FLAIR",
+  "kind": "normal",
+  "file": "samples/healthy-04.zip",
+  "thumb": "samples/healthy-04.png",
+  "size_mb": 4.8,
+  "slices": 28,
+  "credit": {
+   "label": "LEMON \u00b7 OpenNeuro",
+   "url": "https://openneuro.org/datasets/ds000221"
+  }
+ }
+]

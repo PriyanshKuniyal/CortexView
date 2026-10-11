@@ -25,7 +25,7 @@ const FACTS = [
   'The brain floats in about 150 mL of cerebrospinal fluid, which the body replaces several times a day.',
   'A 3D MRI is a stack of thin 2D slices. Each uploaded file is usually one slice.',
   'Every DICOM file records how many millimetres one pixel covers. That is how pixel counts become cm².',
-  'On T1 post-contrast scans, a dye called gadolinium makes some tumours light up where the blood–brain barrier is damaged.',
+  'On T1 post-contrast scans, a dye called gadolinium makes some tumors light up where the blood–brain barrier is damaged.',
   'FLAIR scans darken normal fluid, so swelling and lesions stand out bright.',
   'The adult brain is about 2% of body weight but uses roughly 20% of the body’s energy.',
   'CortexView’s numbers are counted from the outlines. The AI only paints the picture, and is checked against the outlines.',

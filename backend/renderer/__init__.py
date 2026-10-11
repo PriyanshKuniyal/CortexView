@@ -235,8 +235,8 @@ def _post(url: str, fields: dict, headers: dict, timeout: float) -> bytes:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return r.read()
     except urllib.error.HTTPError as e:
-        if e.code in (400, 401, 403, 404):
-            raise _Skip() from None        # bad request, wrong key or URL: another seed won't help
+        if e.code in (400, 401, 403, 404, 429):
+            raise _Skip() from None        # bad request, wrong key/URL or quota used up: another seed won't help
         raise
     except urllib.error.URLError as e:
         if not isinstance(getattr(e, "reason", None), TimeoutError):
