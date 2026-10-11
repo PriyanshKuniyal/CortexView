@@ -15,6 +15,9 @@ license.txt
 # Derived training data (ReMIND guides, pilot QC); regenerate with scripts/synthseg
 data/guides/
 
+# Local segmentation outputs (may contain patient-derived pixels)
+data/out/
+
 # Model weights / training output
 *.safetensors
 *.ckpt
