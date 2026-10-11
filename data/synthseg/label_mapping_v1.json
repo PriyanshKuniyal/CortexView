@@ -1,0 +1,44 @@
+{
+ "white_matter": [
+  2,
+  41,
+  7,
+  46
+ ],
+ "gray_matter": [
+  3,
+  42,
+  8,
+  47,
+  10,
+  49,
+  11,
+  50,
+  12,
+  51,
+  13,
+  52,
+  17,
+  53,
+  18,
+  54,
+  26,
+  58
+ ],
+ "ignore": [
+  16,
+  28,
+  60
+ ],
+ "unused_csf_ventricles": [
+  4,
+  5,
+  14,
+  15,
+  24,
+  43,
+  44
+ ],
+ "ignore_also": "ReMIND tumor (+3 mm) and previous resection cavity (+3 mm)",
+ "status": "SynthSeg reference (silver standard), not ground truth"
+}

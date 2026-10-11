@@ -1,0 +1,18 @@
+# Native-Windows SynthSeg pipeline (Python 3.11.16), as run on 2026-10-10.
+# TensorFlow 2.15 (Keras 2) is what FreeSurfer 7.4.1's mri_synthseg expects; it pins numpy < 2,
+# which in turn needs pyarrow < 19 for idc-index.
+tensorflow==2.15.1
+tensorflow-intel==2.15.1
+keras==2.15.0
+numpy==1.26.4
+scipy==1.17.1
+nibabel==5.4.2
+simpleitk==2.5.6
+highdicom==0.28.2
+pydicom==3.0.2
+idc-index==0.13.0
+pyarrow==18.1.0
+pandas==3.0.6
+matplotlib==3.11.2
+pillow==12.3.0
+dcm2niix==1.0.20260724

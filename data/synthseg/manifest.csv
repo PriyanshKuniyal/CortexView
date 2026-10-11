@@ -1,0 +1,54 @@
+PatientID,synthseg_qc_min,gm_cm3,wm_cm3,tumor_excluded,cavity_excluded,frac_cerebral_gmwm_inside_remind_cerebrum,frac_remind_ventricles_covered_by_gmwm,status,notes
+ReMIND-002,0.675,835.8,529.7,True,False,0.768,,review,
+ReMIND-004,0.752,887.1,558.8,True,False,0.85,0.199,review,"tumor: dcmqi bit-packing repaired (N%8=6, surface 298->228); cerebrum: dcmqi bit-packing repaired (N%8=6, surface 6919166->3657000)"
+ReMIND-007,0.739,706.0,473.6,True,False,0.824,0.176,review,
+ReMIND-008,0.723,725.3,459.1,True,True,0.801,0.15,review,"tumor: dcmqi bit-packing repaired (N%8=7, surface 19232->7508)"
+ReMIND-010,0.679,771.5,520.1,True,False,0.774,0.137,review,"cerebrum: dcmqi bit-packing repaired (N%8=7, surface 9251056->4102498)"
+ReMIND-013,0.672,700.8,432.2,True,False,0.748,0.383,review,
+ReMIND-015,0.722,723.6,486.8,True,False,0.787,,review,"tumor: dcmqi bit-packing repaired (N%8=6, surface 6656->3236)"
+ReMIND-016,0.639,714.3,486.4,True,False,0.832,,review,
+ReMIND-017,0.69,730.6,476.4,True,True,0.798,0.354,review,
+ReMIND-018,0.699,724.8,473.4,True,True,0.809,,review,"cavity: dcmqi bit-packing repaired (N%8=5, surface 9252->4408)"
+ReMIND-020,0.669,837.4,586.3,True,False,0.774,0.065,review,"tumor: dcmqi bit-packing repaired (N%8=6, surface 27644->12388)"
+ReMIND-025,0.692,717.8,441.3,True,False,0.815,0.368,review,
+ReMIND-030,0.676,892.9,623.6,True,False,0.774,,review,
+ReMIND-035,0.713,749.4,495.1,True,False,0.833,,review,
+ReMIND-036,0.729,642.9,430.4,True,False,0.827,,review,
+ReMIND-037,0.75,763.9,497.7,True,False,0.817,0.118,review,"cerebrum: dcmqi bit-packing repaired (N%8=7, surface 7069456->2862238)"
+ReMIND-038,0.698,673.3,478.9,True,False,0.822,,review,"tumor: dcmqi bit-packing repaired (N%8=6, surface 4580->2238)"
+ReMIND-043,0.734,774.0,484.7,True,False,0.854,0.077,review,
+ReMIND-045,0.08,574.3,219.1,True,False,0.753,,review,; wm_cm3 outlier
+ReMIND-047,0.729,639.2,436.6,True,False,0.83,,review,
+ReMIND-050,0.715,703.7,480.6,True,False,0.858,,review,
+ReMIND-052,0.717,675.3,439.2,True,False,0.825,,review,
+ReMIND-057,0.621,773.9,484.4,True,True,0.766,0.56,review,"ventricles: dcmqi bit-packing repaired (N%8=5, surface 33750->20246)"
+ReMIND-059,0.611,706.7,465.5,True,False,0.81,,review,
+ReMIND-060,0.703,838.0,555.8,True,True,0.828,0.052,review,
+ReMIND-061,0.735,670.7,450.1,True,False,0.797,0.144,review,"cerebrum: dcmqi bit-packing repaired (N%8=3, surface 4653308->3039410)"
+ReMIND-062,0.718,718.3,459.0,True,True,0.846,0.067,review,
+ReMIND-063,0.738,834.0,569.4,True,False,0.808,,review,
+ReMIND-064,0.703,709.3,452.3,True,True,0.777,,review,
+ReMIND-067,0.722,840.8,570.0,True,False,0.844,0.07,review,"ventricles: dcmqi bit-packing repaired (N%8=6, surface 709872->304606)"
+ReMIND-068,0.719,633.5,418.8,True,True,0.794,0.134,review,
+ReMIND-070,0.665,878.3,625.1,True,True,0.811,0.071,review,"tumor: dcmqi bit-packing repaired (N%8=3, surface 44436->27822)"
+ReMIND-071,0.683,820.3,570.5,True,False,0.757,,review,
+ReMIND-072,0.667,924.5,674.9,True,False,0.773,0.272,review,; wm_cm3 outlier
+ReMIND-073,0.692,717.8,491.3,True,True,0.8,0.159,review,"tumor: dcmqi bit-packing repaired (N%8=3, surface 18292->11342)"
+ReMIND-074,0.699,903.5,595.9,True,False,0.79,0.388,review,
+ReMIND-075,0.729,822.8,541.1,True,False,0.8,0.027,review,"ventricles: dcmqi bit-packing repaired (N%8=7, surface 864096->315660)"
+ReMIND-077,0.714,714.5,455.6,True,True,0.832,0.25,review,
+ReMIND-078,0.743,685.9,430.5,True,False,0.794,,review,"tumor: dcmqi bit-packing repaired (N%8=5, surface 1238->784); cerebrum: dcmqi bit-packing repaired (N%8=6, surface 5434236->2647070)"
+ReMIND-079,0.711,568.8,367.9,True,False,0.8,,review,
+ReMIND-081,0.735,844.5,546.6,True,False,0.834,,review,
+ReMIND-086,0.692,819.2,587.0,True,False,0.759,0.132,review,"cerebrum: dcmqi bit-packing repaired (N%8=3, surface 2894618->1914232)"
+ReMIND-089,0.713,757.7,487.5,True,False,0.815,0.152,review,"tumor: dcmqi bit-packing repaired (N%8=7, surface 418->342)"
+ReMIND-097,0.659,735.6,474.3,True,False,0.84,0.563,review,"cerebrum: dcmqi bit-packing repaired (N%8=6, surface 3839784->2040942)"
+ReMIND-099,0.725,671.5,455.7,True,False,0.828,0.067,review,"ventricles: dcmqi bit-packing repaired (N%8=6, surface 637306->282756)"
+ReMIND-102,0.732,793.5,512.4,True,True,0.819,0.407,review,"cerebrum: dcmqi bit-packing repaired (N%8=6, surface 5992066->3034628)"
+ReMIND-103,0.676,756.6,493.0,True,False,0.761,0.171,review,"cerebrum: dcmqi bit-packing repaired (N%8=7, surface 10057996->4542536); ventricles: dcmqi bit-packing repaired (N%8=5, surface 535624->224792)"
+ReMIND-104,0.696,672.2,433.7,True,False,0.807,0.228,review,
+ReMIND-105,0.719,754.5,492.9,True,False,0.838,,review,
+ReMIND-107,0.702,754.7,518.6,True,False,0.785,0.127,review,"tumor: dcmqi bit-packing repaired (N%8=6, surface 4456->2250)"
+ReMIND-110,0.737,913.2,660.2,True,False,0.805,,review,"tumor: dcmqi bit-packing repaired (N%8=7, surface 24992->9016); wm_cm3 outlier"
+ReMIND-112,0.707,734.1,499.3,True,False,0.815,0.044,review,"cerebrum: dcmqi bit-packing repaired (N%8=6, surface 6240268->3172650)"
+ReMIND-113,0.671,722.0,468.2,True,False,0.809,,review,

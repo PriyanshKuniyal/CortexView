@@ -3,8 +3,8 @@
 These are the agreements between the pieces of CortexView: backend, segmentation, metrics, rendering and frontend.
 Once frozen, changing one needs everyone's OK (TASKS §2).
 
-- **Source of truth in code:** Pydantic models in `shared/contracts.py`, mirrored by hand in `shared/contracts.ts`.
-  These are written after this draft is approved.
+- **Source of truth in code:** Pydantic models in `shared/contracts.py`, mirrored by hand in `frontend/src/cortexview/api/types.ts`.
+  So far only C4 is in `contracts.py`; the rest are written after this draft is approved.
 - **Layers and colors:** `shared/layers.json`, read by both Python and TS.
 - Items marked **[DECIDE]** are still open.
 
@@ -206,7 +206,7 @@ All numbers are computed from the masks and pixel spacing. **No AI.** The same i
       "centroid_px": [301.2, 188.7],             // [x, y] in slice pixels
       "bbox_px": [270, 160, 335, 220],           // [x0, y0, x1, y1]
       "max_diameter_mm": 31.4,                   // lesion only; null for other layers
-      "volume_ml": 12.8,                         // only if the whole 3D mask is known (e.g. doctor SEG); else null
+      "volume_ml": 12.8,                         // whole scan; only if the whole 3D mask is known, else null (see below)
       "intensity": { "mean": 0.71, "std": 0.08, "ratio_to_brain": 1.48 },  // on the 0–1 windowed image
       "hemisphere": "left",                      // "left" | "right" | "both" | "midline" | null
       "anchor_px": [298, 190],                   // where the pin goes: the point deepest inside the mask
@@ -222,8 +222,27 @@ All numbers are computed from the masks and pixel spacing. **No AI.** The same i
 ```
 
 - MRI brightness has no physical unit, so intensity values are only relative within one scan.
+  They're measured on the slice windowed to 0–1 inside the head, the same window as `mri.png`.
+  `intensity` is null for an empty layer, and `ratio_to_brain` (vs. gray + white matter) is null for skull.
+- `pct_intracranial` is null for skull, which is outside the intracranial space.
+- `volume_ml`: head, brain boundary and lesion are always segmented in 3D, so skull and lesion get a volume from any 3D series.
+  CSF, gray and white matter only get one when every slice was tissue-classified. The API's fast path splits them on the shown slice only, so there they're null.
+  A 2D upload (fewer than 20 slices) gives null for every layer.
 - `hemisphere` comes from DICOM orientation (`patient_left`). It's null if unknown, and there are no lobe names.
-- `text` only fills in fixed templates (list in a later section, P1). There is no generated prose.
+  - The midline is fitted on the slice by left/right mirror symmetry, the same way as the segmenter's lesion midline.
+  - If 85% or more of a layer is on one side, it's that side; otherwise it's `midline` if the centroid is within 5 mm of the midline, else `both`.
+- `anchor_px` and `max_diameter_mm` use the layer's largest blob.
+- `text` only fills in the fixed templates in `shared/text_templates.json`. There is no generated prose.
+  `layer_volume` is emitted once for each layer that has a `volume_ml`.
+- Per-layer `warnings`:
+
+  | Code | Meaning |
+  |---|---|
+  | `small_region` | Under 50 px on this slice. An automatic layer drops to `low` confidence; a doctor label keeps its confidence. |
+  | `many_components` | More than 10 separate lesion blobs on this slice. |
+  | `midline_estimated` | The mirror-symmetry fit wasn't trusted, so the middle of the brain's width was used for `hemisphere`. |
+
+- Code: `backend/metrics_engine/`. `metrics_engine.report(result)` takes a `pipeline.Result`.
 
 ---
 

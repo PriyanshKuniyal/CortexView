@@ -1,0 +1,47 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --color-paper: #ffffff;
+  --color-ink: #000000;
+}
+
+:root {
+  color-scheme: only light;
+}
+
+/* Dark theme: swap the two tokens; every utility follows */
+:root[data-theme="dark"] {
+  color-scheme: only dark;
+  --color-paper: #000000;
+  --color-ink: #ffffff;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-paper font-sans text-ink antialiased;
+}
+
+::selection {
+  @apply bg-ink text-paper;
+}
+
+/* Markdown inside output */
+.prose-chat { @apply text-[15px] leading-7; }
+.prose-chat p { @apply my-2; }
+.prose-chat ul { @apply my-2 list-disc pl-6 marker:text-ink; }
+.prose-chat ol { @apply my-2 list-decimal pl-6 marker:text-ink; }
+.prose-chat code { @apply rounded-md border border-ink bg-paper px-1.5 py-0.5 font-mono text-[13px]; }
+.prose-chat pre { @apply my-3 overflow-x-auto rounded-xl border border-ink bg-paper p-4; }
+.prose-chat pre code { @apply border-0 bg-transparent p-0; }
+.prose-chat a { @apply text-ink underline underline-offset-2; }
+.prose-chat blockquote { @apply my-3 border-l-2 border-ink pl-4 italic; }
+.prose-chat strong { @apply font-semibold; }
+.prose-chat h1, .prose-chat h2, .prose-chat h3 { @apply mt-5 mb-2 font-semibold tracking-tight; }
