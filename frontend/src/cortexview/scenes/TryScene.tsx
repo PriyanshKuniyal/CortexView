@@ -202,7 +202,7 @@ export function TryScene({ film }: { film: Film }) {
         <div className="mono" data-d="0.3">
           Scene 8 · Your turn
         </div>
-        <h2 data-d="0.5">{showRes ? 'Your scan, layer by layer.' : 'Drop a scan. Peel it.'}</h2>
+        <h2 data-d="0.5">{showRes ? 'Your scan, layer by layer.' : 'Add a scan to begin.'}</h2>
 
         {job ? (
           <div className="try-busy">
@@ -216,13 +216,13 @@ export function TryScene({ film }: { film: Film }) {
             <DropZone big onFiles={(f) => start(f)} />
             <ol className="try-how">
               <li>
-                <b>Five layers, found by math.</b> Skull, gray matter, white matter, fluid and any suspected lesion are outlined pixel by pixel.
+                <b>Five layers, mapped by AI.</b> A trained nnU-Net model looks for the skull, gray matter, white matter, fluid and any suspected lesion.
               </li>
               <li>
-                <b>Measured, not guessed.</b> Areas, widths and volumes come from the outlines and the pixel size stored in the file.
+                <b>Measured from the scan.</b> Areas, widths and volumes come from the outlines and the pixel size stored in the file.
               </li>
               <li>
-                <b>Painted by AI, checked by math.</b> FLUX draws the illustration. It is cut to the outlines and scored, so it can’t add anything.
+                <b>Shown with care.</b> The illustration follows the measured outlines, so it cannot invent anatomy outside them.
               </li>
             </ol>
             <p className="note">Files are analyzed in memory on the CortexView server and never written to disk. Educational aid, not for diagnosis.</p>
