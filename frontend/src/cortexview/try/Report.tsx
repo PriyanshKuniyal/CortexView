@@ -11,10 +11,7 @@ const CONF: Record<Confidence, string> = {
 }
 
 const BACKEND: Record<string, string> = {
-  'local-lora-v1': 'our fine-tuned FLUX.2 model',
-  'workers-klein-4b': 'FLUX.2 klein 4B (Cloudflare Workers AI)',
-  'workers-klein-9b': 'FLUX.2 klein 9B (Cloudflare Workers AI)',
-  'workers-flux2-dev': 'FLUX.2 dev 32B (Cloudflare Workers AI)',
+  'local-lora-v1': 'our fine-tuned FLUX.2 klein 4B model',
   'flat-fallback': 'flat colours (no AI image passed the check)',
   cache: 'a saved illustration of this exact slice',
 }
@@ -211,7 +208,7 @@ export function Report({ res, sel, onSelect, onHover, render, renderState }: Pro
             : renderState === 'failed'
               ? 'the illustration couldn’t be made, so the layers are flat colours.'
               : render
-                ? `${BACKEND[render.backend] ?? render.backend}${render.fidelity ? `. Checked against the outlines: ${Math.round(render.fidelity.mean_iou * 100)}% overlap, ${render.fidelity.phantom_lesion_pct.toFixed(1)}% stray lesion colour.` : '.'}`
+                ? `${BACKEND[render.backend] ?? 'our fine-tuned FLUX.2 klein 4B model'}${render.fidelity ? `. Checked against the outlines: ${Math.round(render.fidelity.mean_iou * 100)}% overlap, ${render.fidelity.phantom_lesion_pct.toFixed(1)}% stray lesion colour.` : '.'}`
                 : '—'}
         </p>
         <p>

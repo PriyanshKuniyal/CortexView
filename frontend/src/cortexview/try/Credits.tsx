@@ -58,16 +58,10 @@ const GROUPS: { title: string; items: Credit[] }[] = [
     title: 'Illustration',
     items: [
       {
-        name: 'FLUX.2 [klein]',
-        what: 'Image model by Black Forest Labs that paints the illustration. The 9B model is non-commercial; 4B is Apache 2.0.',
-        license: 'FLUX non-commercial / Apache 2.0',
+        name: 'Fine-tuned FLUX.2 klein 4B',
+        what: 'Fine-tuned image model that paints the educational illustration.',
+        license: 'Apache 2.0',
         url: 'https://bfl.ai/',
-      },
-      {
-        name: 'Cloudflare Workers AI',
-        what: 'Runs FLUX.2 for the live demo.',
-        license: 'Service',
-        url: 'https://developers.cloudflare.com/workers-ai/',
       },
     ],
   },

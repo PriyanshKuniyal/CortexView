@@ -34,11 +34,9 @@ long-running Python processes, configure `VITE_API_BASE_URL` in the Vercel proje
 redeploy. The browser then sends uploads directly to the backend, avoiding Vercel proxy body-size limits. Add the
 exact Vercel origin to the backend's `CORS_ORIGINS`, for example `CORS_ORIGINS=https://your-project.vercel.app`.
 
-The backend keeps Workers AI credentials server-side. Set `CF_ACCOUNT_ID`, `CF_API_TOKEN`, and
-`CF_MODEL=workers-flux2-dev` in the backend deployment, and keep `RENDER_BACKENDS=workers,flat` (or include
-`workers` before `flat`). With those values present, each completed upload submits the generated guide image to
-Flux through the backend render job and the frontend polls that job. Without valid Workers AI credentials, the API
-uses its documented flat fallback instead of failing the analysis.
+The backend keeps image-rendering configuration server-side. Each completed upload sends its generated guide image
+to the fine-tuned FLUX.2 klein 4B render job, while the frontend polls for the completed illustration. If an
+illustration cannot be created, the API uses its documented flat-colour fallback instead of failing the analysis.
 
 ## Structure
 
