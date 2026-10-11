@@ -10,7 +10,7 @@ Once frozen, changing one needs everyone's OK (TASKS §2).
 
 <!-- NOTE FOR TEAMMATES AND AI AGENTS: a second segmentation backend (AI, 3D) is being built on branch
      `segmentation-AI-version`. It plugs in behind the same interface as the classical one. Read C6 before
-     changing segment(), the layer list, C3 timing or C4. GM/WM + outer-CSF training labels (SynthSeg) are pending from a teammate. -->
+     changing segment(), the layer list, C3 timing or C4. SynthSeg GM/WM/CSF training labels arrived 2026-10-11 (data/synthseg). -->
 > **⚠ Two segmentation backends.** The classical one (`backend/cortexview/segment.py`) and an AI one (branch `segmentation-AI-version`, see **C6**) must stay interchangeable via one setting.
 > If you change `segment()`, the layer list (C1), the timing in C3, or C4, check C6 too.
 
@@ -277,7 +277,9 @@ volume = Volume(data [k, j, i], affine, sequence, ...)       e.g. (192, 256, 216
 segment(volume, meta) → label volume, same shape, values = C1 labels (0, 1, 2, 3, 4, 10)
 ```
 - **Both segmenters use the same loader** (`backend/cortexview/dicom_io.py` + `volume.py`, owned by the classical side).
-  The AI branch uses an unchanged copy (see `backend/cortexview/segment_ai/CLASSICAL_SNAPSHOT.md`).
+  The AI branch merges `main` and uses the loader unchanged.
+- **The AI model reads T1 only** (`T1_post`, `T1_pre`): that's what its training scans are. Other sequences, single
+  slices (< 20) and machines without a usable GPU or weights go to the classical segmenter with `segmenter_fallback`.
 - Per-layer masks, the displayed slice and the C3 PNGs are all cut from the label volume afterwards.
   So the label volume also gives lesion volume in mL (C4) and the auto "largest lesion" slice.
 - If the classical `segment()` signature changes, the AI one follows it.
@@ -285,26 +287,24 @@ segment(volume, meta) → label volume, same shape, values = C1 labels (0, 1, 2,
 **Where each AI layer's training labels come from:**
 | Layer | Training labels | Who draws them | Status |
 |---|---|---|---|
-| `lesion` | ReMIND tumor SEG | **manual, doctors** | available |
-| `csf`, ventricles part | ReMIND ventricles SEG | automatic (BrainLab), shipped with ReMIND | available |
-| `csf`, outer part (sulci + around the brain) | **SynthSeg** label 24 (silver standard, tumor area masked out) | teammate runs SynthSeg offline | **pending** |
-| `skull` | head − ReMIND cerebrum − SynthSeg outer CSF | cerebrum: automatic (BrainLab); outer CSF: SynthSeg | available (head − cerebrum); refined when SynthSeg lands |
-| `gray_matter`, `white_matter` | **SynthSeg** (silver standard, tumor area masked out) | teammate runs SynthSeg offline | **pending** |
+| `lesion` | ReMIND tumor SEG; **empty on healthy IXI scans** | **manual, doctors** | available |
+| `csf`, ventricles part | ReMIND ventricles SEG where it exists, else SynthSeg ventricles | BrainLab (automatic) / SynthSeg | available |
+| `csf`, outer part (sulci + around the brain) | **SynthSeg** label 24 (silver standard) | SynthSeg | available (2026-10-11) |
+| `skull` | head − everything SynthSeg labels − tumor | head: classical head mask | available |
+| `gray_matter`, `white_matter` | **SynthSeg** (silver standard); brainstem and ventral DC count as white matter | SynthSeg | available (2026-10-11) |
 
-All SynthSeg outputs are produced per `docs/prompts/synthseg-gm-wm.md` (mapping v2).
-
-- SynthSeg is used **only for gray matter, white matter and outer CSF**. Lesion and ventricles come only from ReMIND.
-  Wherever both have a label, ReMIND wins (tumor > ventricles > SynthSeg).
-- **Until SynthSeg lands, the AI `csf` layer is the ventricles only.** The UI should call it "Ventricles" until then.
-  Meanwhile the outer CSF falls into the skull layer (around the brain) or the brain tissue (in the folds).
-- **Modular SynthSeg stage:** until the SynthSeg labels arrive, the AI model predicts one combined "brain tissue" region.
-  Gray/white matter inside it is split by a separate, swappable stage (initially the classical intensity split).
-  When the SynthSeg labels land, the model is retrained with GM, WM and outer CSF. Nothing else in this contract changes.
+Scans (built by `ml/build_dataset.py`, split in `ml/splits_v2.json`, anonymous IDs only):
+- **ReMIND T1-post** with a tumor: SynthSeg from FreeSurfer `mri_synthseg --robust` (`data/synthseg`, per
+  `docs/prompts/synthseg-gm-wm.md`). Patients failing SynthSeg's QC (< 0.65) are left out.
+- **Healthy IXI T1** (brain-development.org/ixi-dataset, CC BY-SA 3.0), so the model learns that a scan may have no
+  tumor. Labelled with DIPY's PyTorch port of SynthSeg (`ml/synthseg_dipy.py`; same weights, non-robust variant).
+- No label in a 3 mm ring around the tumor or in the resection cavity +3 mm (nnU-Net ignore label): SynthSeg's labels mean nothing there.
+- Wherever ReMIND and SynthSeg both have a label, ReMIND wins (tumor > ventricles > SynthSeg).
 - **Never train on Kaggle LGG** (CC BY-NC-SA would carry over to the weights). It may be used for evaluation only.
 - Weights stay out of the public repo (`ml/weights/`, gitignored).
 
-**Evaluation.** Both segmenters are scored by the same `scripts/seg/eval_dice.py`, on the same held-out ReMIND patients (anonymous IDs only).
-Patients are never split across train and test.
+**Evaluation.** Both segmenters are scored by `ml/evaluate.py` (`--classical` for the classical one) on the same
+held-out scans: 12 ReMIND patients + 33 healthy IXI scans (anonymous IDs only). Patients are never split across train and test.
 
 **Determinism.** Inference runs in PyTorch deterministic mode, in full 32-bit precision, with pinned versions.
 On the same machine and versions, the same input gives the same masks (checked by a repeat-run test).

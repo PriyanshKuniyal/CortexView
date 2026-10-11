@@ -12,8 +12,9 @@ torch.compile needs Triton, which Windows lacks, so it's off. nnU-Net folders li
 (gitignored: patient-derived volumes).
 
 Usage (repo root, AI venv):
-  backend/.venv-ai/Scripts/python.exe -I ml/train.py --epochs 250
-  backend/.venv-ai/Scripts/python.exe -I ml/train.py --epochs 250 --continue     # resume after a stop
+  backend/.venv-ai/Scripts/python.exe -I ml/train.py --epochs 150
+  backend/.venv-ai/Scripts/python.exe -I ml/train.py --epochs 150 --continue     # resume after a stop
+(the epoch count may change on resume; the learning-rate schedule follows the new total)
 """
 from __future__ import annotations
 
@@ -22,11 +23,13 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 BIN = Path(sys.executable).parent                           # venv Scripts folder
 WEIGHTS = ROOT / "ml/weights/cortexview_nnunet"
+EVERY = 10              # every 10 epochs: resumable checkpoint + usable model in WEIGHTS
 
 
 def setup_env(nn: Path, n_proc: int) -> None:
@@ -56,14 +59,59 @@ def make_trainer(epochs: int, iters: int):
             import torch
             super().__init__(plans, configuration, fold, dataset_json, device or torch.device("cuda"))
             self.num_epochs = epochs
+            self.save_every = EVERY                         # checkpoint_latest.pth, for --continue
             if iters:
                 self.num_iterations_per_epoch = iters
+            self._it, self._t0 = 0, time.perf_counter()
+
+        def on_train_epoch_start(self):
+            super().on_train_epoch_start()
+            self._it, self._t0 = 0, time.perf_counter()
+
+        def train_step(self, batch):
+            out = super().train_step(batch)
+            self._it += 1
+            n = self.num_iterations_per_epoch
+            if self._it % 10 == 0 or self._it == n:         # live progress inside the epoch
+                dt = time.perf_counter() - self._t0
+                print(f"  epoch {self.current_epoch + 1}/{self.num_epochs}  step {self._it}/{n}  "
+                      f"loss {float(out['loss']):.4f}  {dt / self._it:.2f} s/step  "
+                      f"epoch ETA {dt / self._it * (n - self._it):.0f} s", flush=True)
+            return out
+
+        def on_epoch_end(self):
+            super().on_epoch_end()                          # counts the epoch as done
+            done = self.current_epoch
+            left = (self.num_epochs - done) * (time.perf_counter() - self._t0)
+            print(f"== epoch {done}/{self.num_epochs} done; about {left / 3600:.1f} h left", flush=True)
+            if done % EVERY == 0 and done < self.num_epochs:
+                export(self, f"epoch {done}")
     return CortexViewTrainer
+
+
+def export(trainer, label: str) -> None:
+    """Write the current model as a loadable nnU-Net folder in ml/weights/cortexview_nnunet/ (overwritten)."""
+    import torch
+    run = Path(trainer.output_folder_base)
+    tmp = Path(trainer.output_folder) / "checkpoint_export.pth"
+    trainer.save_checkpoint(str(tmp))
+    if WEIGHTS.exists():
+        shutil.rmtree(WEIGHTS)
+    (WEIGHTS / "fold_all").mkdir(parents=True)
+    for f in ("dataset.json", "plans.json", "dataset_fingerprint.json"):
+        shutil.copy2(run / f, WEIGHTS / f)
+    # the predictor looks the trainer class up by name inside nnunetv2; ours only changes the training
+    # loop (same network), so the copy is labelled as nnU-Net's own trainer
+    ck = torch.load(tmp, map_location="cpu", weights_only=False)
+    ck["trainer_name"] = "nnUNetTrainer"
+    torch.save(ck, WEIGHTS / "fold_all" / "checkpoint_final.pth")
+    tmp.unlink()
+    print(f"== model ({label}) saved to {WEIGHTS}", flush=True)
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--epochs", type=int, default=250)
+    ap.add_argument("--epochs", type=int, default=150)
     ap.add_argument("--continue", dest="cont", action="store_true")
     ap.add_argument("--gpu-gb", type=float, default=7.0, help="GPU memory the plan may use")
     ap.add_argument("--workers", type=int, default=4, help="data-augmentation processes (RAM-bound)")
@@ -88,28 +136,17 @@ def main() -> None:
     trainer = make_trainer(a.epochs, a.iters)(plans, "3d_fullres", "all", load_json(pre / "dataset.json"),
                                               torch.device("cuda"))
     if a.cont:
-        for name in ("checkpoint_latest.pth", "checkpoint_final.pth"):
+        for name in ("checkpoint_latest.pth", "checkpoint_final.pth", "checkpoint_best.pth"):
             ck = Path(trainer.output_folder) / name
             if ck.exists():
                 trainer.load_checkpoint(str(ck))
+                print(f"resuming from {name} at epoch {trainer.current_epoch}", flush=True)
                 break
     torch.backends.cudnn.benchmark = True
     trainer.run_training()
 
-    if a.no_copy:
-        return
-    run = Path(trainer.output_folder_base)
-    if WEIGHTS.exists():
-        shutil.rmtree(WEIGHTS)
-    (WEIGHTS / "fold_all").mkdir(parents=True)
-    for f in ("dataset.json", "plans.json", "dataset_fingerprint.json"):
-        shutil.copy2(run / f, WEIGHTS / f)
-    # the predictor looks the trainer class up by name inside nnunetv2; ours only changes the training
-    # loop (same network), so the copy is labelled as nnU-Net's own trainer
-    ck = torch.load(run / "fold_all" / "checkpoint_final.pth", map_location="cpu", weights_only=False)
-    ck["trainer_name"] = "nnUNetTrainer"
-    torch.save(ck, WEIGHTS / "fold_all" / "checkpoint_final.pth")
-    print(f"weights copied to {WEIGHTS}")
+    if not a.no_copy:
+        export(trainer, "final")
 
 
 if __name__ == "__main__":
