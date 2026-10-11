@@ -29,8 +29,6 @@ if str(ROOT) not in sys.path:
 from shared.contracts import Intensity, LayerMetrics, MetricsReport, TextItem  # noqa: E402
 
 TEMPLATES_JSON = ROOT / "shared" / "text_templates.json"
-if not TEMPLATES_JSON.is_file():
-    TEMPLATES_JSON = Path(__file__).resolve().parents[1] / "shared" / "text_templates.json"
 
 SMALL_REGION_PX = 50        # fewer pixels: warning `small_region`, and an auto layer drops to `low`
 MANY_COMPONENTS = 10        # more lesion blobs: warning `many_components` (GM/CSF are always fragmented)

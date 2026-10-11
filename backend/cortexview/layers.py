@@ -6,9 +6,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
-_BACKEND_SHARED = Path(__file__).resolve().parents[1] / "shared" / "layers.json"
-_REPO_SHARED = Path(__file__).resolve().parents[2] / "shared" / "layers.json"
-LAYERS_JSON = _BACKEND_SHARED if _BACKEND_SHARED.is_file() else _REPO_SHARED
+LAYERS_JSON = Path(__file__).resolve().parents[2] / "shared" / "layers.json"
 
 
 @dataclass(frozen=True)
