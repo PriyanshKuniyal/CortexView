@@ -28,3 +28,6 @@ models/
 third_party/
 .venv-lora/
 lora_work/
+
+# Render cache (illustrations of demo cases)
+data/render_cache/

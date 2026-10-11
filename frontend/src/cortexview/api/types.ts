@@ -1,6 +1,6 @@
 /**
- * API types, hand-mirrored from docs/contracts.md (C3 API, C4 metrics, DRAFT v0).
- * There is no backend or OpenAPI schema in the repo yet; regenerate these from OpenAPI once there is.
+ * API types, hand-mirrored from shared/contracts.py (C3 API, C4 metrics; docs/contracts.md).
+ * The backend serves the same schema at /api/openapi.json. Change both together.
  */
 import type { LayerId } from '../layers'
 
@@ -38,7 +38,8 @@ export interface LayerMetrics {
   bbox_px: [number, number, number, number] | null
   max_diameter_mm: number | null
   volume_ml: number | null
-  intensity: { mean: number; std: number; ratio_to_brain: number } | null
+  /** null when the layer is empty; ratio_to_brain is null for skull */
+  intensity: { mean: number; std: number; ratio_to_brain: number | null } | null
   hemisphere: 'left' | 'right' | 'both' | 'midline' | null
   /** [x, y] in slice pixels; null when the layer is empty */
   anchor_px: [number, number] | null

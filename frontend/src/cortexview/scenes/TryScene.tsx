@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { LAYERS, N_LAYERS, byId, css, type LayerId } from '../layers'
 import { ApiError, analyze, fetchRender } from '../api/client'
 import type { AnalyzeResponse, LayerMetrics } from '../api/types'
-import { MAX_UPLOAD_MB, RENDER_TIMEOUT_MS, USE_MOCK } from '../config'
+import { ANALYZE_TIMEOUT_MS, RENDER_TIMEOUT_MS } from '../config'
 import type { Film } from '../film/useScrollFilm'
 import { describeFiles, sequenceLabel, spacingLabel } from '../format'
 
@@ -11,9 +11,7 @@ type Step = '' | 'run' | 'ok'
 type RenderState = 'idle' | 'pending' | 'done' | 'failed'
 
 const STEPS = ['Read DICOM', 'Find five layers', 'Measure each layer', 'Paint the illustration']
-const IDLE_NOTE = USE_MOCK
-  ? 'Mock API: every upload shows the built-in synthetic scan. Files aren’t read.'
-  : 'Files are analyzed on the CortexView server, in memory only, and never written to disk.'
+const IDLE_NOTE = 'Files are analyzed on the CortexView server, in memory only, and never written to disk.'
 
 const isAbort = (e: unknown) => e instanceof DOMException && e.name === 'AbortError'
 const errorText = (e: unknown) => (e instanceof ApiError ? e.message : 'Something went wrong. Please try again.')
@@ -111,9 +109,19 @@ export function TryScene({ film }: { film: Film }) {
   const [sel, setSel] = useState<LayerId>('lesion')
   const [over, setOver] = useState(false)
   const [lastFiles, setLastFiles] = useState<File[] | null>(null)
+  const [elapsed, setElapsed] = useState(0)
   const run = useRef<AbortController | null>(null)
 
   useEffect(() => () => run.current?.abort(), [])
+
+  // Seconds since the upload started, so a long analysis never looks frozen.
+  useEffect(() => {
+    if (!busy) return
+    const t0 = performance.now()
+    setElapsed(0)
+    const id = setInterval(() => setElapsed(Math.floor((performance.now() - t0) / 1000)), 1000)
+    return () => clearInterval(id)
+  }, [busy])
 
   const setStep = (i: number, step: Step, time: string) => {
     setSteps((s) => s.map((v, k) => (k === i ? step : v)))
@@ -156,11 +164,6 @@ export function TryScene({ film }: { film: Film }) {
 
   async function start(files: File[]) {
     if (!files.length) return
-    const total = files.reduce((s, f) => s + f.size, 0)
-    if (total > MAX_UPLOAD_MB * 1024 * 1024) {
-      setError(`That’s ${(total / 1024 / 1024).toFixed(0)} MB. The limit is ${MAX_UPLOAD_MB} MB.`)
-      return
-    }
     run.current?.abort()
     const ac = new AbortController()
     run.current = ac
@@ -175,17 +178,24 @@ export function TryScene({ film }: { film: Film }) {
     const t0 = performance.now()
 
     let r: AnalyzeResponse
+    let timedOut = false
+    const timer = setTimeout(() => {
+      timedOut = true
+      ac.abort()
+    }, ANALYZE_TIMEOUT_MS)
     try {
       r = await analyze(files, ac.signal)
     } catch (e) {
-      if (isAbort(e)) return
+      if (isAbort(e) && !timedOut) return
       setBusy(false)
       setRender((st) => (st === 'pending' ? 'failed' : st)) // the previous scan's polling was cancelled
       setSteps(['', '', '', ''])
       setTimes(['', '', '', ''])
       setNote(res ? 'Still showing the previous scan.' : IDLE_NOTE)
-      setError(errorText(e))
+      setError(timedOut ? `The analysis took longer than ${ANALYZE_TIMEOUT_MS / 60_000} minutes and was stopped. Try again, or upload a single series.` : errorText(e))
       return
+    } finally {
+      clearTimeout(timer)
     }
     const tDone = performance.now()
 
@@ -262,7 +272,7 @@ export function TryScene({ film }: { film: Film }) {
             <div className="ov tl">
               {slice ? (
                 <>
-                  {USE_MOCK ? 'Mock API · phantom' : 'Your scan'}
+                  Your scan
                   <br />
                   {sequenceLabel(slice)}
                 </>
@@ -287,7 +297,7 @@ export function TryScene({ film }: { film: Film }) {
             {busy ? (
               <div className="badge">
                 <span className="sp" />
-                Reading the scan
+                Reading the scan · {elapsed} s
               </div>
             ) : painting ? (
               <div className="badge">
@@ -324,7 +334,7 @@ export function TryScene({ film }: { film: Film }) {
               </svg>
               <div>
                 <b>Drop .dcm files or a .zip</b>
-                <span>or click to choose · up to {MAX_UPLOAD_MB} MB</span>
+                <span>or click to choose · a whole scan folder is fine</span>
               </div>
               <input
                 type="file"

@@ -1,6 +1,6 @@
 /**
  * Synthetic axial brain phantom, ported unchanged from docs/design/CortexView.html.
- * Used by the film scenes when DEMO_SOURCE = 'synthetic', and by the mock API. Never a patient.
+ * Used by the film scenes when DEMO_SOURCE = 'synthetic'. Never a patient.
  */
 import { LAYERS, byLabel, type LayerId } from '../layers'
 

@@ -75,6 +75,7 @@ def scan(sources) -> tuple[dict[str, SeriesInfo], list[SegInfo], int]:
     by_uid: dict[str, list] = defaultdict(list)
     first: dict[str, Dataset] = {}
     segs, bad = [], 0
+    seen: set[str] = set()
     for src in sources:
         try:
             ds = pydicom.dcmread(src, stop_before_pixels=True)
@@ -83,6 +84,11 @@ def scan(sources) -> tuple[dict[str, SeriesInfo], list[SegInfo], int]:
             continue
         if hasattr(src, "seek"):
             src.seek(0)
+        sop = str(ds.get("SOPInstanceUID", ""))
+        if sop:
+            if sop in seen:
+                continue            # the same file uploaded twice (e.g. a folder and its zip): use it once
+            seen.add(sop)
         if is_seg(ds):
             items = ds.get("SegmentSequence", [])
             refs = [str(r.SeriesInstanceUID) for r in ds.get("ReferencedSeriesSequence", [])
@@ -309,13 +315,53 @@ def doctor_labels_on(vol: Volume, masks: list[SegMask], allow_frame_mismatch: bo
     return out, sorted(set(warnings))
 
 
+def _seg_frame_starts(n_frames: int, n_px: int, carry: int) -> np.ndarray:
+    """Bit offset of each frame. carry = n_px % 8 is the standard layout (frames packed back to back);
+    a smaller carry models the dcmqi writer bug (from scripts/synthseg/remind_synthseg.py)."""
+    k = np.arange(n_frames)
+    return 8 * (k * (n_px // 8) + (k * carry) // 8) + (k * (n_px % 8)) % 8
+
+
+def binary_seg_frames(ds: Dataset) -> np.ndarray | None:
+    """Unpack an uncompressed BINARY SEG's frames [F, R, C], repairing the dcmqi bit-packing bug.
+
+    Some ReMIND SEGs (QIICR dcmqi, SoftwareVersions ef9e227) are packed wrongly when Rows*Columns % 8 is
+    3, 5, 6 or 7; read per the standard, every frame comes out shifted sideways and wrapped around. Both
+    layouts are decoded and the one with the smaller surface (a real outline is smooth, a sheared one is
+    ragged) wins; ties go to the repaired layout. None if the pixel data is compressed."""
+    if ds.file_meta.TransferSyntaxUID.is_compressed:
+        return None
+    F, R, C = int(ds.get("NumberOfFrames", 1)), int(ds.Rows), int(ds.Columns)
+    N, r = R * C, (R * C) % 8
+    bits = np.unpackbits(np.frombuffer(ds.PixelData, np.uint8), bitorder="little")
+
+    def decode(carry):
+        out = np.zeros((F, N), np.uint8)
+        for i, s in enumerate(_seg_frame_starts(F, N, carry)):
+            x = bits[s:s + N]
+            out[i, :len(x)] = x
+        return out.reshape(F, R, C)
+
+    def surface(a):
+        a = np.pad(a, 1).astype(np.int8)
+        return sum(int(np.abs(np.diff(a, axis=ax)).sum()) for ax in range(3))
+
+    bug = r & -r                                  # lowest set bit of r
+    if bug == r:                                  # r in {0, 1, 2, 4}: both layouts are the same
+        return decode(r)
+    std, fix = decode(r), decode(bug)
+    return fix if surface(fix) <= surface(std) else std
+
+
 def load_seg(ds: Dataset) -> list[SegMask]:
     """One SegMask per segment. Frames may be sparse (empty slices omitted), so each frame is placed
     on the slice grid by its position along the plane normal."""
-    pix = ds.pixel_array
+    frac = str(ds.get("SegmentationType", "BINARY")).upper() == "FRACTIONAL"
+    pix = None if frac else binary_seg_frames(ds)
+    if pix is None:
+        pix = ds.pixel_array
     if pix.ndim == 2:
         pix = pix[None]
-    frac = str(ds.get("SegmentationType", "BINARY")).upper() == "FRACTIONAL"
     shared = ds.SharedFunctionalGroupsSequence[0] if "SharedFunctionalGroupsSequence" in ds else Dataset()
     per_frame = ds.PerFrameFunctionalGroupsSequence
 
