@@ -22,7 +22,8 @@ data/out/
 
 # AI segmentation: nnU-Net data folders (patient-derived volumes) and trained weights
 ml/nnunet/
-ml/weights/
+ml/weights/*
+!ml/weights/cortexview_nnunet/
 ml/*_private.json
 
 # Model weights / training output

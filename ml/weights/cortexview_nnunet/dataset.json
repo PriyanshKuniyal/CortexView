@@ -1,0 +1,18 @@
+{
+    "channel_names": {
+        "0": "T1"
+    },
+    "labels": {
+        "background": 0,
+        "skull": 1,
+        "gray_matter": 2,
+        "white_matter": 3,
+        "csf": 4,
+        "lesion": 5,
+        "ignore": 6
+    },
+    "numTraining": 74,
+    "file_ending": ".nii.gz",
+    "name": "CortexView",
+    "description": "ReMIND T1-post (SynthSeg + ReMIND labels) and healthy IXI T1 (SynthSeg)"
+}
