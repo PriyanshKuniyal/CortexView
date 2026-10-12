@@ -54,7 +54,7 @@
 .try-peel span{display:inline-flex;align-items:center;gap:7px;min-width:150px}
 .try-peel span i{width:9px;height:9px;display:block;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
 .try-view .drop{max-width:360px;padding:10px 14px}
-.try-err{margin-top:14px;font-weight:600;color:#9b1c1c}
+.try-err{margin-top:14px;font-weight:600;color:#8d1f1f}
 
 /* ---------- 3D exploded stack ---------- */
 .x3d{--gap:clamp(30px,3.9vw,64px);position:relative;width:100%;aspect-ratio:1.3;perspective:1900px;perspective-origin:50% 30%;cursor:grab;user-select:none;touch-action:none}
@@ -158,7 +158,7 @@
 .rep-layers .rl-vl{font-family:var(--f-mono);font-size:12px;font-variant-numeric:tabular-nums}
 .rep-layers .rl-cf{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;text-align:center;padding:3px 0;box-shadow:inset 0 0 0 1px var(--rule);color:var(--ink-2)}
 .rep-layers .rl-cf.high{background:var(--ink);color:#fff;box-shadow:none}
-.rep-layers .rl-cf.low{color:#9b1c1c;box-shadow:inset 0 0 0 1px rgba(155,28,28,.35)}
+.rep-layers .rl-cf.low{color:#8d1f1f;box-shadow:inset 0 0 0 1px rgba(155,28,28,.35)}
 .rep-detail{padding:2px 6px 16px 28px;font-size:13px;color:var(--ink-2);animation:tfact .4s ease}
 .rep-detail p{margin-bottom:10px;color:var(--ink)}
 .rep-detail dl{display:grid;grid-template-columns:1fr auto;gap:5px 14px;margin:0}

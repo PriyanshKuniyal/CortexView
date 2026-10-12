@@ -63,6 +63,7 @@ button{font:inherit;color:inherit}
 .counter{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);text-align:right;line-height:1.5}
 .counter b{color:var(--ink);font-weight:500}
 .brand{font-family:var(--f-display);font-weight:700;letter-spacing:-.01em;font-size:14px;text-transform:none;color:var(--ink)}
+.story-flag{position:fixed;z-index:50;left:50%;top:18px;transform:translateX(-50%);padding:8px 14px;background:var(--ink);color:var(--paper-hi);font-family:var(--f-mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;box-shadow:0 18px 30px -24px rgba(0,0,0,.6);pointer-events:none}
 .scrub{position:fixed;z-index:40;left:clamp(16px,2.4vw,32px);right:clamp(16px,2.4vw,32px);bottom:calc(env(safe-area-inset-bottom,0px) + 18px);display:flex;gap:4px}
 .scrub button{flex:var(--w,1);height:16px;border:0;padding:0;background:transparent;cursor:pointer;position:relative}
 .scrub button::before{content:"";position:absolute;left:0;right:0;top:7px;height:2px;background:var(--rule)}

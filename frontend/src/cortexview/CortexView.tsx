@@ -49,6 +49,9 @@ export function CortexView() {
       <div id="track" ref={film.bindTrack} />
       <Hud film={film} names={NAMES} />
       <main>
+        <div className="story-flag" aria-label="Applications section">
+          APPLICATIONS · real-world use cases
+        </div>
         {demo && (
           <>
             <TitleScene film={film} demo={demo} />
