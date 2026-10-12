@@ -54,17 +54,7 @@ const GROUPS: { title: string; items: Credit[] }[] = [
       },
     ],
   },
-  {
-    title: 'Illustration',
-    items: [
-      {
-        name: 'Fine-tuned FLUX.2 klein 4B',
-        what: 'Fine-tuned image model that paints the educational illustration.',
-        license: 'Apache 2.0',
-        url: 'https://bfl.ai/',
-      },
-    ],
-  },
+
 ]
 
 export function Credits() {

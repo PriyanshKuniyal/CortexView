@@ -9,7 +9,7 @@ import { RENDER_TIMEOUT_MS } from '../config'
  * - 114 ReMIND patients: scripts/analysis/download_remind.py (all 114 Preop patients).
  * - 3929 slices: data/archive/kaggle_3m holds 3929 image/mask pairs.
  * - 663 series / 10.9 GB: from the prototype; not verifiable from the repo (the download manifest isn't checked in).
- * - 4B, Apache-2.0: FLUX.2 klein base-4B (scripts/lora/train_klein4b_edit.yaml).
+ * - 4B, Apache-2.0: FLUX.2-klien 4b (scripts/lora/train_klein4b_edit.yaml).
  * - 60 s / 5 min: contract C3 (render polling limit, render result lifetime).
  */
 const FIGURES: { count: number; suffix?: string; d: string }[] = [
@@ -17,7 +17,7 @@ const FIGURES: { count: number; suffix?: string; d: string }[] = [
   { count: 114, d: 'ReMIND patients, surgeon-reviewed outlines · TCIA' },
   { count: 663, d: 'pre-op MRI and label series, 10.9 GB' },
   { count: 3929, d: 'extra slices with checked lesion masks' },
-  { count: 4, suffix: 'B', d: 'parameters, FLUX.2 klein base · Apache-2.0' },
+  { count: 4, suffix: 'B', d: 'parameters, FLUX.2-klien 4b · Apache-2.0' },
   { count: N_LAYERS, suffix: 'layers', d: 'tissue layers, scalp to lesion' },
   { count: RENDER_TIMEOUT_MS / 1000, suffix: 's', d: 'longest wait for the illustration' },
   { count: 5, suffix: 'min', d: 'max time in memory. Nothing hits disk' },

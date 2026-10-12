@@ -37,7 +37,7 @@ export function FineTuneScene({ film, demo }: { film: Film; demo: DemoData }) {
             </p>
           </div>
           <div className="ft-spec" aria-label="Fine-tuning configuration">
-            <span>FLUX.2 klein 4B</span>
+            <span>FLUX.2-klien 4b</span>
             <span>edit LoRA</span>
             <span>512 px · 2,000 steps</span>
           </div>
